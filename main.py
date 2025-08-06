@@ -5,7 +5,7 @@ import random
 
 app = FastAPI()
 
-# 模擬語料庫資料（實作時請改成連線或讀檔）
+# 模擬語料庫資料
 sample_data = {
     "FFN": [
         {"zh": "我們今天需要開會。", "en": "We need to have a meeting today."},
@@ -26,7 +26,6 @@ class SentenceResponse(BaseModel):
     similar: list
 
 def mock_analyze(en: str):
-    # 模擬句型解析和模板
     return {
         "template": "Subject + Verb + Object",
         "parsed": {
@@ -38,10 +37,9 @@ def mock_analyze(en: str):
 
 @app.get("/sentence", response_model=SentenceResponse)
 def get_sentence(source: str = Query(...), topic: str = Query(...)):
-    # 隨機選一句（未依據 topic 過濾）
     if source not in sample_data:
         return {"error": "Unknown source"}
-
+    
     sentence = random.choice(sample_data[source])
     analysis = mock_analyze(sentence["en"])
 
@@ -51,5 +49,5 @@ def get_sentence(source: str = Query(...), topic: str = Query(...)):
         "source": source,
         "template": analysis["template"],
         "parsed": analysis["parsed"],
-        "similar": []  # 後續會補上
+        "similar": []  # 未來擴充
     }
