@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>個人化中翻英句型練習系統</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container my-4">
+    <h1 class="mb-3">中翻英句型練習系統</h1>
+    <form id="source-form" class="mb-4">
+      <div class="form-group mb-2">
+        <label>選擇語料庫：</label>
+        <select id="source" class="form-control">
+          <option value="FFN">FFN</option>
+          <option value="TranslateFX">TranslateFX</option>
+          <option value="OpenSubtitles">OpenSubtitles</option>
+          <option value="WikiMatrix">WikiMatrix</option>
+        </select>
+      </div>
+      <div class="form-group mb-2">
+        <label>選擇主題：</label>
+        <select id="topic" class="form-control">
+          <option value="business">商務</option>
+          <option value="general">非商務</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">取得句子</button>
+    </form>
 
+    <div id="sentence-display" class="mb-3"></div>
+    <div id="template-display" class="mb-3"></div>
+    <div id="parsed-display" class="mb-3"></div>
+    <div id="similar-display" class="mb-3"></div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
