@@ -1,4 +1,4 @@
-const apiUrl = 'https://your-node-api.onrender.com';
+const apiUrl = 'https://newsbeiter.onrender.com';
 
 document.getElementById('source-form').addEventListener('submit', async (e) => {
   e.preventDefault();
