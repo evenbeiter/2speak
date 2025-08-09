@@ -73,7 +73,7 @@ async function lessonGetContent(id){
     html+=`
       <p class="fs12">${h.content.en}<br>${h.content.zh}</p>
       <p>${h.tag}<br><span style="color:#4b7bf5">${h.content.pattern}</span><br>${h.content.grammar}</p>
-      <p>${mistake_to_avoid}</p>
+      <p>${h.mistake_to_avoid}</p>
       <p class="fs10">${h.src} | ${h.content.tone} | ${h.content.register} | ${h.content.cefr}</p>
       <br>
       `;
