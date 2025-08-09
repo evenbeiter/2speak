@@ -1,4 +1,4 @@
-
+const pattern=['比較','對比','建議','因果','條件','進度報告','狀態描述','描述趨勢','預測','趨勢觀察'];
 
 //    DEFINE NAME OF ELEMENTS (same in main.bml.js)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22,6 +22,11 @@ const isVisible=!overlay.classList.contains('d-none');
 document.addEventListener('keydown', function (e) {if (isVisible && e.key === 'Escape') {hideOverlay()}});
 const backendURL = 'https://newsbeiter.onrender.com';
 
+
+channelList.innerHTML='';
+for (let p of pattern){channelList.innerHTML+=`<button class="btn sepia me-1 mb-1" type="button" onclick="get1stList('lesson','句型 | ${p}','${p}')">${p}</button>`;}
+openChannelList();
+//get1stList(siteName, top+' | '+site[0][1],site[0][0]);
 
 
 //    LESSONS UPLOADER
