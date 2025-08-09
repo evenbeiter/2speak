@@ -1,6 +1,3 @@
-    
-var onEVBT=true; if (window.location.href.indexOf('evenbeiter.github.io')==-1){onEVBT=false;}
-
 //    GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,7 +46,6 @@ async function getList(siteName,t){
   siteNameVar=siteName;rr++;rt=t;cursor='';
   if (rr==1){newNews()};
   items=[];html='';
-  if (msnALL.includes(siteName)){list.innerHTML+=await msnGetList(siteName,t)}
   else {list.innerHTML+=await window[`${siteName}GetList`](siteName,t)};
   loading.style.display='none';
 }
