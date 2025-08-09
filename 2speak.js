@@ -26,7 +26,7 @@ const backendURL = 'https://newsbeiter.onrender.com';
 //    NOTES UPLOADER
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 
-uploadBtn.addEventListener('click', () => {
+uploadBtn.addEventListener('click', async function () => {
     try {
       if (navigator.clipboard && navigator.clipboard.readText) {
         textContent = await navigator.clipboard.readText();
