@@ -46,7 +46,7 @@ async function getList(siteName,t){
   siteNameVar=siteName;rr++;rt=t;cursor='';
   if (rr==1){newNews()};
   items=[];html='';
-  else {list.innerHTML+=await window[`${siteName}GetList`](siteName,t)};
+  list.innerHTML+=await window[`${siteName}GetList`](siteName,t);
   loading.style.display='none';
 }
 
