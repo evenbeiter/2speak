@@ -69,7 +69,7 @@ async function lessonGetContent(id){
   if (!res.ok) throw new Error('無法讀取筆記');
   const str=await res.json();
   for (let s of str){
-    if (s) {var h=JSON.parse(s);//console.log(h);
+    if (s) {var h=JSON.parse(s);console.log(h);
     html+=`
       <p class="fs12">${h.content.en}<br>${h.content.zh}</p>
       <p>${h.tag}<br><span style="color:#4b7bf5">${h.content.pattern}</span><br>${h.content.grammar}</p>
