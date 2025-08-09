@@ -69,6 +69,7 @@ async function getContent(siteName,clickedId,id){
       const selectedText=selection.toString().trim();
       if (selectedText.length===0){
         cEl.style.display='none';
+        cEl.previousElementSibling.previousElementSibling.scrollIntoView()
         // try{
         //   if (msnALL.includes(siteName)){cEl.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.scrollIntoView()}
         // } catch {document.body.scrollTop = 0;document.documentElement.scrollTop = 0}
