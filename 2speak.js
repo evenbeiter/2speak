@@ -35,14 +35,18 @@ uploadBtn.addEventListener('click', async () => {
       alert('無學習內容可上傳');
     }
     if (textContent) {
+        try{
         for (let t of textContent.split('\n')){
-            fetch(`${backendURL}/lesson/add`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: t
-            }).then(res => {
-                if (!res.ok) alert('❌ 上傳失敗');
-            });
+            if (t){
+                fetch(`${backendURL}/lesson/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: t
+                }).then(res => {
+                    // if (!res.ok) alert('❌ 上傳失敗');
+                });
+            }
         }
+        }catch{alert('❌ 上傳失敗');}
     }
 });
