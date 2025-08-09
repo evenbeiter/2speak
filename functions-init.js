@@ -56,7 +56,7 @@ async function getContent(siteName,clickedId,id){
     loading.style.display='block';
     cEl.style.display='block';
 
-    if (cEl.innerText.indexOf('句型')!==-1){
+    if (cEl.innerText.indexOf('句型')==-1){
     //get content
     cEl.innerHTML+=await window[`${siteName}GetContent`](id);
     }
