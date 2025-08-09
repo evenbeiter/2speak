@@ -77,7 +77,7 @@ async function lessonGetContent(id){
       <p class="fs12 fw-bold" style="color:#4b7bf5">${h.content.en}<br>${h.content.zh}</p>
       <p>${h.tag}：<span style="color:#4b7bf5">${h.content.pattern}</span><br>${h.content.grammar}</p>
       <p>${h.content.mistake_to_avoid}</p>`;
-    html+=h.content.extra_examples?`<p>${h.content.extra_examples[0]}</p><p>${h.content.extra_examples}[1]}</p>`:'';
+    html+=h.content.extra_examples?`<p class="fs12">${h.content.extra_examples[0]}</p><p class="fs12">${h.content.extra_examples[1]}</p>`:'';
     html+=`<p class="fs10 fw-normal">${h.src}<br>
       ${h.content.tone} | ${h.content.register} | ${h.content.cefr}</p>
       <br><hr>`;
