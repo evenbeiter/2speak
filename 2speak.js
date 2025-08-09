@@ -28,10 +28,12 @@ const backendURL = 'https://newsbeiter.onrender.com';
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 
 uploadBtn.addEventListener('click', async () => {
+    let textContent = '';
+    let confirmUpload = false;
     try {
       if (navigator.clipboard && navigator.clipboard.readText) {
-        let textContent = await navigator.clipboard.readText();
-        if (textContent.startsWith('{')){let confirmUpload = confirm('是否上傳筆記？');}
+        textContent = await navigator.clipboard.readText();
+        if (textContent.startsWith('{')){confirmUpload = confirm('是否上傳筆記？');}
       }
     } catch (err) {
       alert('無學習內容可上傳');
