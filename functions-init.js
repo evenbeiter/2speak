@@ -1,8 +1,6 @@
 //    GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const pattern=['狀態描述','比較','建議','因果','對比','描述趨勢','預測','進度報告','趨勢觀察','條件'];
-
 var siteNameVar='',docTitle='',tabs=[];
 var items=[],ytnCoverImg='',ytnVideo='',ecoMagContent,url='',html='',coun='',t='',uuids='',lastId='',cursor='',payload={},rt='',rr=0,buildId='';
 //const sats=getLastNSats(5);
