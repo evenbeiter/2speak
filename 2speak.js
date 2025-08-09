@@ -30,12 +30,13 @@ const backendURL = 'https://newsbeiter.onrender.com';
 uploadBtn.addEventListener('click', async () => {
     try {
       if (navigator.clipboard && navigator.clipboard.readText) {
-        textContent = await navigator.clipboard.readText();
+        let textContent = await navigator.clipboard.readText();
+        if (textContent.startsWith('{')){let confirmUpload = confirm('是否上傳筆記？');}
       }
     } catch (err) {
       alert('無學習內容可上傳');
     }
-    if (textContent) {
+    if (textContent && confirmUpload) {
         fetch(`${backendURL}/lesson/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -74,7 +75,7 @@ async function lessonGetContent(id){
       <p class="fs12 fw-bold" style="color:#4b7bf5">${h.content.en}<br>${h.content.zh}</p>
       <p>${h.tag}：<span style="color:#4b7bf5">${h.content.pattern}</span><br>${h.content.grammar}</p>
       <p>${h.content.mistake_to_avoid}</p>
-      <p class="fs10">${h.src} | ${h.content.tone} | ${h.content.register} | ${h.content.cefr}</p>
+      <p class="fs10 fw-normal">${h.src} | ${h.content.tone} | ${h.content.register} | ${h.content.cefr}</p>
       <br><hr>
       `;
     }
