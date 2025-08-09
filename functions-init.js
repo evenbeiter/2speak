@@ -92,7 +92,6 @@ window.onscroll = function () {
     const scrollTop = window.scrollY;
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
-    if (!noNextPage.includes(siteNameVar)){
       if (scrollTop + windowHeight >= documentHeight - 5) {
         if(rt!=='s'){
           getList(siteNameVar,rt);
@@ -100,7 +99,7 @@ window.onscroll = function () {
           getSearchResults(siteNameVar);
         }
       }
-    }
+    
   }, 1000);
 };
 
