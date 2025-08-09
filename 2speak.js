@@ -84,7 +84,7 @@ async function lessonGetContent(id){
 }
 
 async function lessonGetSearchResults(siteName,t){
-  try{url=`${backendURL}/notes/search?q=${encodeURIComponent(t)}`;
+  try{url=`${backendURL}/lessons/search?q=${encodeURIComponent(t)}`;
   let res=await fetch(url);
   let str=await res.json();
   for (let h of str){
