@@ -71,7 +71,7 @@ async function lessonGetContent(id){
   for (let s of str){
     if (s) {var h=JSON.parse(s);console.log(h);
     html+=`
-      <p class="fs12 title" style="color:#4b7bf5">${h.content.en}<br>${h.content.zh}</p>
+      <p class="fs12 fw-bold" style="color:#4b7bf5">${h.content.en}<br>${h.content.zh}</p>
       <p>${h.tag}：<span style="color:#4b7bf5">${h.content.pattern}</span><br>${h.content.grammar}</p>
       <p>${h.content.mistake_to_avoid}</p>
       <p class="fs10">${h.src} | ${h.content.tone} | ${h.content.register} | ${h.content.cefr}</p>

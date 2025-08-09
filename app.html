@@ -43,6 +43,16 @@
       <hr style="margin-right:3rem">
       <div id="channelList"></div>
       <div id="searchList" style="display:none"></div>
+      <div id="ecoMagList" style="display:none">
+        <button class="btn sepia me-1 mb-1" onclick="dlEcoMag()">下載雜誌</button>
+        <button id="copy-btn" class="btn sepia me-1 mb-1" onclick="copyJSONToClipboard()" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+          </svg>
+        </button>
+        <input type="file" id="fileInput" class="btn sepia me-1 mb-1 form-control" onchange="openBook(this)"/><hr>
+      </div>
+      <div id="urlList" style="display:none"></div>
     </div>
   </form>
 <div id="list" class="mx-3 pt-3 sepia"></div>
