@@ -80,6 +80,8 @@ async function lessonGetContent(id){
       `;
     }
   }
+  if (html==='') html+='<p>尚無內容</p>';
+  else html=html.slice(0,html.length-4);
   }catch{html='<p>尚無內容</p>'}
   return html;
 }
@@ -91,8 +93,6 @@ async function lessonGetSearchResults(siteName,t){
   for (let h of str){
     html+=`<p class="title" onclick="getContent('${siteName}',this.id,'${h.path}')">${h.title}</p><div id="${h.path}" class="content" onclick="getContent('${siteName}',this.id,'${h.path}')"></div><hr>`;
   }
-  if (html==='') html+='<p>尚無內容</p>';
-  else html=html.slice(0,html.length-4);
   }catch{html='<p>尚無內容</p>'}
   return html;
 }
