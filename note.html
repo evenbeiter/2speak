@@ -89,6 +89,7 @@
             <button id="btnDelete" class="btn btn-danger btn-sm">刪除列</button>
             <button id="btnDuplicate" class="btn btn-warning btn-sm">複製列</button>
             <button id="btnMerge" class="btn btn-info btn-sm">與前列合併</button>
+            <button id="btnClearName" class="btn btn-info btn-sm">清除講者名</button>
         </div>
       </div>
 
@@ -120,6 +121,7 @@
     const btnDelete = document.getElementById("btnDelete");
     const btnDuplicate = document.getElementById("btnDuplicate");
     const btnMerge = document.getElementById("btnMerge");
+    const btnClearName = document.getElementById("btnClearName");
     const btnSave = document.getElementById("btnSave");
     const filenameInput = document.getElementById("filename");
     const btnLoad = document.getElementById("btnLoad");
@@ -240,6 +242,15 @@
     });
 
 
+    // 清除講者名
+    btnClearName.addEventListener("click", () => {
+        const hh = document.querySelectorAll('[data-label="句子"]');
+        for (let h of hh){
+            h.innerText=h.innerText.replace(/\b([A-Z\s]+): /g,'');
+        }
+    });
+
+
     const backendURL = 'https://newsbeiter.onrender.com';
 
     // 儲存
@@ -302,24 +313,10 @@
         //   row.insertCell(2).innerText = match[2];
           for (let c of row.cells) c.setAttribute("contenteditable", "true");
         }
-      };      
-
-
-    //   const str=await res.json();
-    //   for (let s of str){
-    //     if (s) {var h=JSON.parse(s);console.log(h);
-    //       const row = noteTable.insertRow();
-    //       row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${h.example}</td>`;
-    //       row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記">${h.note}</td>`;
-    //       row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解">${h.category}</td>`;
-    //     //   row.insertCell(0).innerText = match[3];
-    //     //   row.insertCell(1).innerText = match[1];
-    //     //   row.insertCell(2).innerText = match[2];
-    //       for (let c of row.cells) c.setAttribute("contenteditable", "true");            
-    //     }
-    //   }
+      };
 
       inputArea.style.display = "none";
+      toolBox.style.display = "block";
       tableContainer.style.display = "block";
       document.getElementById("saveSection").style.display = "flex";
 
