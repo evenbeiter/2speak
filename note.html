@@ -287,11 +287,11 @@
 
       if (!res.ok) throw new Error('無法讀取筆記');
 
-      const textData = await res.text();
+      const str = await res.json();
 
       noteTable.innerHTML = "";
-      textData.split("\n").forEach(line => {
-        const match = line.match(/\{note:(.*?), category:(.*?), example:(.*)\}/);
+      for (let s of str){
+        const match = s.match(/\{note:(.*?), category:(.*?), example:(.*)\}/);
         if (match) {
           const row = noteTable.insertRow();
           row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${match[3]}</td>`;
@@ -302,7 +302,7 @@
         //   row.insertCell(2).innerText = match[2];
           for (let c of row.cells) c.setAttribute("contenteditable", "true");
         }
-      });      
+      };      
 
 
     //   const str=await res.json();
