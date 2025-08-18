@@ -12,15 +12,48 @@
     tr.active {
       background-color: #ffeeba !important;
     }
+
+    /* 表格表頭固定 */
+    #noteTable thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa;
+      z-index: 2;
+    }
+
+    /* 上方操作區固定 */
+    #topBar {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: white;
+      padding-top: 1rem;
+    }
+
   </style>
 </head>
 <body class="p-4">
 
   <div class="container">
-    <!-- 輸入區 -->
-    <div class="mb-3">
-      <textarea id="inputText" class="form-control" rows="6" placeholder="在此貼上文字..."></textarea>
-      <button id="btnGenerate" class="btn btn-primary mt-2">1. 轉換成表格</button>
+    <!-- 固定在最上方的區域 -->
+    <div id="topBar">
+      <!-- 輸入區 -->
+      <div class="mb-3">
+        <textarea id="inputText" class="form-control" rows="6" placeholder="在此貼上文字..."></textarea>
+        <button id="btnGenerate" class="btn btn-primary mt-2">1. 轉換成表格</button>
+      </div>
+
+      <!-- 儲存功能 -->
+      <div class="input-group mb-3" id="saveSection" style="display:none;">
+        <input type="text" id="filename" class="form-control" placeholder="輸入檔名 (example.txt)">
+        <button id="btnSave" class="btn btn-success">儲存到 GitHub</button>
+      </div>
+
+      <!-- 載入功能 -->
+      <div class="input-group mb-3">
+        <input type="text" id="loadFilename" class="form-control" placeholder="輸入檔名 (example.txt)">
+        <button id="btnLoad" class="btn btn-secondary">繼續編輯</button>
+      </div>
     </div>
 
     <!-- 編輯表格 -->
@@ -41,6 +74,7 @@
         <tbody contenteditable="true"></tbody>
       </table>
     </div>
+
 
     <!-- 儲存功能 -->
     <div class="input-group mb-3" id="saveSection" style="display:none;">
