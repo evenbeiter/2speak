@@ -2,24 +2,11 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>筆記編輯器</title>
+  <title>Note</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    td[contenteditable="true"] {
-      min-width: 150px;
-      outline: none;
-    }
-    tr.active {
-      background-color: #ffeeba !important;
-    }
-
-    /* 表格表頭固定 */
-    #noteTable thead th {
-      position: sticky;
-      top: 0;
-      background-color: #f8f9fa;
-      z-index: 2;
-    }
+    @font-face{font-family:"Microsoft JhengHei" !important;src:local("Microsoft JhengHei") !important;unicode-range:U+4E00-9FFF !important}
+    body {font-family:arial,'Microsoft JhengHei', sans-serif !important}
 
     /* 上方操作區固定 */
     #topBar {
@@ -29,69 +16,105 @@
       background: white;
       padding-top: 1rem;
     }
+    
+    /* 表格表頭固定 */
+    /* #noteTable thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa;
+      z-index: 2;
+    } */
 
-  </style>
+    td[contenteditable="true"] {
+      min-width: 150px;
+      outline: none;
+    }
+    tr.active {
+      background-color: #ffeeba !important;
+    }
+
+    #noteTable td:nth-child(1),#noteTable th:nth-child(1) {width:50%}
+    #noteTable td:nth-child(2),#noteTable th:nth-child(2) {width:35%}
+    #noteTable td:nth-child(3),#noteTable th:nth-child(3) {width:15%}
+
+    @media (max-width: 768px) {
+        #noteTable td, 
+        #noteTable th {
+            display: block;
+            width: 100% !important;
+        }
+
+        #noteTable tr {
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            display: block;
+        }
+
+        #noteTable td::before {
+            content: attr(data-label); /* 在手機版顯示欄位標題 */
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+    }
+
+
+</style>
 </head>
 <body class="p-4">
 
   <div class="container">
     <!-- 固定在最上方的區域 -->
-    <div id="topBar">
       <!-- 輸入區 -->
-      <div class="mb-3">
+      <div class="mb-2" id="inputArea">
         <textarea id="inputText" class="form-control" rows="6" placeholder="在此貼上文字..."></textarea>
-        <button id="btnGenerate" class="btn btn-primary mt-2">1. 轉換成表格</button>
+        <button id="btnGenerate" class="btn btn-primary mt-2">轉換成表格</button>
       </div>
 
-      <!-- 儲存功能 -->
-      <div class="input-group mb-3" id="saveSection" style="display:none;">
-        <input type="text" id="filename" class="form-control" placeholder="輸入檔名 (example.txt)">
-        <button id="btnSave" class="btn btn-success">儲存到 GitHub</button>
-      </div>
+      <div id="topBar">
+        <!-- 儲存功能 -->
+        <div class="input-group mb-2" id="saveSection">
+            <input type="text" id="filename" class="form-control" placeholder="輸入檔名 (example.txt)">
+            <button id="btnSave" class="btn btn-success">儲存到 GitHub</button>
+        </div>
 
-      <!-- 載入功能 -->
-      <div class="input-group mb-3">
-        <input type="text" id="loadFilename" class="form-control" placeholder="輸入檔名 (example.txt)">
-        <button id="btnLoad" class="btn btn-secondary">繼續編輯</button>
+        <!-- 載入功能 -->
+        <div class="input-group mb-2">
+            <input type="text" id="loadFilename" class="form-control" placeholder="輸入檔名 (example.txt)">
+            <button id="btnLoad" class="btn btn-secondary">繼續編輯</button>
+        </div>
+
+        <!-- 操作列 -->
+        <div class="mb-2" id="toolBox" style="display:none;">
+            <button id="btnDelete" class="btn btn-danger btn-sm">刪除列</button>
+            <button id="btnDuplicate" class="btn btn-warning btn-sm">複製列</button>
+            <button id="btnMerge" class="btn btn-info btn-sm">與前列合併</button>
+        </div>
       </div>
-    </div>
 
     <!-- 編輯表格 -->
     <div class="mb-3" id="tableContainer" style="display:none;">
-      <div class="mb-2">
-        <button id="btnDelete" class="btn btn-danger btn-sm">2. 刪除列</button>
-        <button id="btnDuplicate" class="btn btn-warning btn-sm">3. 複製列</button>
-        <button id="btnMerge" class="btn btn-info btn-sm">4. 與前列合併</button>
+
+      <div class="table-responsive">
+        <table id="noteTable" class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>句子</th>
+                <th>筆記</th>
+                <th>註解</th>
+            </tr>
+            </thead>
+            <tbody contenteditable="true"></tbody>
+        </table>
       </div>
-      <table id="noteTable" class="table table-bordered table-hover align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>句子</th>
-            <th>筆記</th>
-            <th>註解</th>
-          </tr>
-        </thead>
-        <tbody contenteditable="true"></tbody>
-      </table>
     </div>
 
-
-    <!-- 儲存功能 -->
-    <div class="input-group mb-3" id="saveSection" style="display:none;">
-      <input type="text" id="filename" class="form-control" placeholder="輸入檔名 (example.txt)">
-      <button id="btnSave" class="btn btn-success">儲存到 GitHub</button>
-    </div>
-
-    <!-- 載入功能 -->
-    <div class="input-group mb-3">
-      <input type="text" id="loadFilename" class="form-control" placeholder="輸入檔名 (example.txt)">
-      <button id="btnLoad" class="btn btn-secondary">繼續編輯</button>
-    </div>
   </div>
 
   <script>
     const inputText = document.getElementById("inputText");
     const btnGenerate = document.getElementById("btnGenerate");
+    const toolBox = document.getElementById("toolBox");
     const tableContainer = document.getElementById("tableContainer");
     const noteTable = document.getElementById("noteTable").querySelector("tbody");
     const btnDelete = document.getElementById("btnDelete");
@@ -115,12 +138,16 @@
       const sentences = splitSentences(inputText.value.trim());
       sentences.forEach(s => {
         const row = noteTable.insertRow();
-        row.insertCell(0).innerText = s.trim();
-        row.insertCell(1).innerText = "";
-        row.insertCell(2).innerText = "";
+        row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${s.trim()}</td>`;
+        row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記"></td>`;
+        row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解"></td>`;
+        // row.insertCell(0).innerText = s.trim();
+        // row.insertCell(1).innerText = "";
+        // row.insertCell(2).innerText = "";
         for (let cell of row.cells) cell.setAttribute("contenteditable", "true");
       });
-      inputText.style.display = "none";
+      inputArea.style.display = "none";
+      toolBox.style.display = "block";
       tableContainer.style.display = "block";
       document.getElementById("saveSection").style.display = "flex";
     });
@@ -145,10 +172,13 @@
     // 複製列
     btnDuplicate.addEventListener("click", () => {
       if (activeRow) {
-        const newRow = noteTable.insertRow(activeRow.rowIndex + 1);
-        newRow.insertCell(0).innerText = activeRow.cells[0].innerText;
-        newRow.insertCell(1).innerText = "";
-        newRow.insertCell(2).innerText = "";
+        const newRow = noteTable.insertRow(activeRow.rowIndex);
+        newRow.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${activeRow.cells[0].innerText}</td>`;
+        newRow.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記"></td>`;
+        newRow.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解"></td>`;
+        // newRow.insertCell(0).innerText = activeRow.cells[0].innerText;
+        // newRow.insertCell(1).innerText = "";
+        // newRow.insertCell(2).innerText = "";
         for (let cell of newRow.cells) cell.setAttribute("contenteditable", "true");
       }
     });
@@ -164,31 +194,58 @@
 
     // Enter鍵分裂列
     noteTable.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
+    if (e.key === "Enter") {
         const sel = window.getSelection();
         const range = sel.getRangeAt(0);
-        const cell = range.startContainer.closest("td");
-        const row = cell.closest("tr");
-        if (cell.cellIndex === 0) {
-          const text = cell.innerText;
-          const pos = range.startOffset;
-          const before = text.slice(0, pos);
-          const after = text.slice(pos);
-          cell.innerText = before;
-          const newRow = noteTable.insertRow(row.rowIndex + 1);
-          newRow.insertCell(0).innerText = after;
-          newRow.insertCell(1).innerText = "";
-          newRow.insertCell(2).innerText = "";
-          for (let c of newRow.cells) c.setAttribute("contenteditable", "true");
+
+        let container = range.startContainer;
+        if (container.nodeType === Node.TEXT_NODE) {
+        container = container.parentElement;
         }
-      }
+
+        const cell = container.closest("td");
+        if (!cell) return;
+
+        const row = cell.closest("tr");
+
+        // ✅ 只攔截第一欄 (句子)
+        if (cell.cellIndex === 0) {
+        e.preventDefault(); // 阻止換行
+
+        const text = cell.innerText;
+        const pos = range.startOffset;
+        const before = text.slice(0, pos);
+        const after = text.slice(pos);
+        cell.innerText = before;
+
+        const newRow = noteTable.insertRow(row.rowIndex);
+        newRow.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${after}</td>`;
+        newRow.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記"></td>`;
+        newRow.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解"></td>`;
+        // newRow.insertCell(0).innerText = after;
+        // newRow.insertCell(1).innerText = "";
+        // newRow.insertCell(2).innerText = "";
+        for (let c of newRow.cells) c.setAttribute("contenteditable", "true");
+
+        // 把游標移到新列的第一欄
+        const newCell = newRow.cells[0];
+        const rangeNew = document.createRange();
+        rangeNew.selectNodeContents(newCell);
+        rangeNew.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(rangeNew);
+        }
+        // 如果是第二欄或第三欄 → 不處理，保留原本 Enter 換行行為
+    }
     });
+
+
+    const backendURL = 'https://newsbeiter.onrender.com';
 
     // 儲存
     btnSave.addEventListener("click", async () => {
-      const filename = filenameInput.value.trim();
-      if (!filename) return alert("請輸入檔名");
+      const filename = filenameInput.value.trim()+'.txt';
+      if (filename==='.txt') return alert("請輸入檔名");
 
       const data = [];
       [...noteTable.rows].forEach(row => {
@@ -203,39 +260,99 @@
         `{note:${d.note}, category:${d.category}, example:${d.example}}`
       ).join("\n");
 
-      await fetch("http://localhost:3000/save", {
+      const url=`${backendURL}/lesson/add`;
+      await fetch(url, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ filename, content: textData })
       });
 
-      alert("已儲存到 GitHub");
+      alert("已儲存到雲端");
     });
+
 
     // 載入
     btnLoad.addEventListener("click", async () => {
-      const filename = loadFilenameInput.value.trim();
-      if (!filename) return alert("請輸入檔名");
+      const filename = loadFilenameInput.value.trim()+'.txt';
+      if (filename==='.txt') return alert("請輸入檔名");
 
-      const res = await fetch("http://localhost:3000/load?filename=" + filename);
-      const textData = await res.text();
-
-      noteTable.innerHTML = "";
-      textData.split("\n").forEach(line => {
-        const match = line.match(/\{note:(.*?), category:(.*?), example:(.*)\}/);
-        if (match) {
-          const row = noteTable.insertRow();
-          row.insertCell(0).innerText = match[3];
-          row.insertCell(1).innerText = match[1];
-          row.insertCell(2).innerText = match[2];
-          for (let c of row.cells) c.setAttribute("contenteditable", "true");
-        }
+      const url=`${backendURL}/notes/read`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({category:'2speak', path:filename})
       });
+
+      if (!res.ok) throw new Error('無法讀取筆記');
+      const str=await res.json();
+      for (let s of str){
+        if (s) {var h=JSON.parse(s);console.log(h);
+          const row = noteTable.insertRow();
+          row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${h.example}</td>`;
+          row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記">${h.note}</td>`;
+          row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解">${h.category}</td>`;
+        //   row.insertCell(0).innerText = match[3];
+        //   row.insertCell(1).innerText = match[1];
+        //   row.insertCell(2).innerText = match[2];
+          for (let c of row.cells) c.setAttribute("contenteditable", "true");            
+        }
+      }
 
       inputText.style.display = "none";
       tableContainer.style.display = "block";
       document.getElementById("saveSection").style.display = "flex";
+
+    //   const textData = await res.text();
+
+    //   noteTable.innerHTML = "";
+    //   textData.split("\n").forEach(line => {
+    //     const match = line.match(/\{note:(.*?), category:(.*?), example:(.*)\}/);
+    //     if (match) {
+    //       const row = noteTable.insertRow();
+    //       row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${match[3]}</td>`;
+    //       row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記">${match[1]}</td>`;
+    //       row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解">${match[2]}</td>`;
+    //     //   row.insertCell(0).innerText = match[3];
+    //     //   row.insertCell(1).innerText = match[1];
+    //     //   row.insertCell(2).innerText = match[2];
+    //       for (let c of row.cells) c.setAttribute("contenteditable", "true");
+    //     }
+    //   });
+
     });
+
+
+
+    async function lessonGetContent(id){
+        try{url=`${backendURL}/notes/read`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({category:'2speak', path:id})
+        });
+        if (!res.ok) throw new Error('無法讀取筆記');
+        const str=await res.json();
+        for (let s of str){
+            if (s) {var h=JSON.parse(s);console.log(h);
+            html+=`
+            <p class="fs12 fw-bold" style="color:#4b7bf5">${h.content.en}<br>${h.content.zh}</p>
+            <p>${h.tag}：<span style="color:#4b7bf5">${h.content.pattern}</span><br>${h.content.grammar}</p>
+            <p>${h.content.mistake_to_avoid}</p>`;
+            html+=h.content.extra_examples?`<p class="fs12">${h.content.extra_examples[0]}</p><p class="fs12">${h.content.extra_examples[1]}</p>`:'';
+            html+=`<p class="fs10 fw-normal">${h.src}<br>
+            ${h.content.tone} | ${h.content.register} | ${h.content.cefr}</p>
+            <br><hr>`;
+            }
+        }
+        if (html==='') html+='<p>尚無內容</p>';
+        else html=html.slice(0,html.length-4);
+        }catch{html='<p>尚無內容</p>'}
+        return html;
+    }
+
+
+
+
   </script>
 </body>
 </html>
