@@ -258,19 +258,28 @@
       const filename = filenameInput.value.trim()+'.txt';
       if (filename==='.txt') return alert("請輸入檔名");
 
-      const data = [];
-      [...noteTable.rows].forEach(row => {
-        data.push({
-          note: row.cells[1].innerText.trim(),
-          category: row.cells[2].innerText.trim(),
-          example: row.cells[0].innerText.trim()
-        });
-      });
+      //const data = [];
+      //[...noteTable.rows].forEach(row => {
+      //  data.push({
+      //    note: row.cells[1].innerText.trim(),
+      //    category: row.cells[2].innerText.trim(),
+      //    example: row.cells[0].innerText.trim()
+      //  });
+      //});
 
-      const textData = data.map(d => 
-        `{note:${d.note}, category:${d.category}, example:${d.example}}`
-      ).join("\n");
+      //const textData = data.map(d => 
+      //  `{note:${d.note}, category:${d.category}, example:${d.example}}`
+      //).join("\n");
 
+const textData = [...noteTable.rows].map(row => {
+  const obj = {
+    note: row.cells[1].innerText.trim(),
+    category: row.cells[2].innerText.trim(),
+    example: row.cells[0].innerText.trim()
+  };
+  return JSON.stringify(obj);
+}).join("\n");
+      
       const url=`${backendURL}/lesson/add`;
       await fetch(url, {
         method: "POST",
@@ -302,17 +311,18 @@
 
       noteTable.innerHTML = "";
       for (let s of str){
-        const match = s.match(/\{note:(.*?), category:(.*?), example:(.*)\}/);
-        if (match) {
+        const h=JSON.parse(s);
+        //const match = s.match(/\{note:(.*?), category:(.*?), example:(.*)\}/);
+        //if (match) {
           const row = noteTable.insertRow();
-          row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${match[3]}</td>`;
-          row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記">${match[1]}</td>`;
-          row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解">${match[2]}</td>`;
+          row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${h.example}</td>`;
+          row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記">${h.note}</td>`;
+          row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解">${h.category}</td>`;
         //   row.insertCell(0).innerText = match[3];
         //   row.insertCell(1).innerText = match[1];
         //   row.insertCell(2).innerText = match[2];
           for (let c of row.cells) c.setAttribute("contenteditable", "true");
-        }
+        //}
       };
 
       inputArea.style.display = "none";
