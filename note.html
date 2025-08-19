@@ -373,13 +373,13 @@ btnToggleSelect.addEventListener("click", () => {
 
     // 移除每列的 checkbox
     [...noteTable.rows].forEach(row => {
-      if (row.cells[0].querySelector("input[type='checkbox']")) {
-        row.deleteCell(0);
+      if (row.cells[1].querySelector("input[type='checkbox']")) {
+        row.deleteCell(1);
       }
     });
 
     // 移除表頭的「選取」
-    const theadRow = noteTable.querySelector("thead tr");
+    const theadRow = document.querySelector("thead tr");
     if (theadRow && theadRow.querySelector(".select-col")) {
       theadRow.removeChild(theadRow.querySelector(".select-col"));
     }
