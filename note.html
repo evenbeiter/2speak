@@ -353,7 +353,7 @@ btnToggleSelect.addEventListener("click", () => {
     // 在每一列最前面加上 checkbox
     [...noteTable.rows].forEach(row => {
       if (!row.querySelector("input[type='checkbox']")) {
-        const checkboxCell = row.insertCell(3);  // 在最前面插入一個欄位
+        const checkboxCell = row.insertCell(1);  // 在最前面插入一個欄位
         checkboxCell.innerHTML = `<input type="checkbox" class="row-selector">`;
       }
     });
@@ -364,7 +364,7 @@ btnToggleSelect.addEventListener("click", () => {
       const th = document.createElement("th");
       th.classList.add("select-col");
       th.innerText = "選取";
-      theadRow.insertBefore(th, theadRow.lastChild);
+      theadRow.insertBefore(th, theadRow.children[1]);
     }
 
   } else {
