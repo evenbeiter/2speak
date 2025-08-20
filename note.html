@@ -44,8 +44,8 @@ tr.active {
 #noteTable td:nth-child(3),#noteTable th:nth-child(3) {width:15%}
 
 @media screen and (-webkit-min-device-pixel-ratio: 2) {
-  #noteTable td, 
-  #noteTable th {
+  /* #noteTable th,  */
+  #noteTable td {
       display: block;
       width: 100% !important;
   }
@@ -56,12 +56,12 @@ tr.active {
       display: block;
   }
 
-  #noteTable td::before {
-      content: attr(data-label); /* 在手機版顯示欄位標題 */
+  /* #noteTable td::before {
+      content: attr(data-label); /* 在手機版顯示欄位標題 
       font-weight: bold;
       display: block;
       margin-bottom: 0.25rem;
-  }
+  } */
 }
 </style>
 </head>
@@ -72,30 +72,30 @@ tr.active {
       <!-- 輸入區 -->
       <div class="mb-2" id="inputArea">
         <textarea id="inputText" class="form-control" rows="6" placeholder="在此貼上文字..."></textarea>
-        <button id="btnGenerate" class="btn btn-primary mt-2">轉換成表格</button>
+        <button id="btnGenerate" class="btn btn-primary mt-2">轉成表格</button>
       </div>
 
       <div id="topBar">
         <!-- 儲存功能 -->
         <div class="input-group mb-2" id="saveSection">
             <input type="text" id="filename" class="form-control" placeholder="輸入檔名 (yyyymmddxx)">
-            <button id="btnSave" class="btn btn-success">儲存到 GitHub</button>
+            <button id="btnSave" class="btn btn-success">儲存</button>
         </div>
 
         <!-- 載入功能 -->
         <div class="input-group mb-2">
             <input type="text" id="loadFilename" class="form-control" placeholder="輸入檔名 (yyyymmddxx)">
-            <button id="btnLoad" class="btn btn-secondary">繼續編輯</button>
+            <button id="btnLoad" class="btn btn-secondary">編輯</button>
         </div>
 
         <!-- 操作列 -->
         <div class="mb-2" id="toolBox" style="display:none;">
-            <button id="btnDelete" class="btn btn-danger btn-sm">刪除列</button>
-            <button id="btnDuplicate" class="btn btn-warning btn-sm">複製列</button>
-            <button id="btnMerge" class="btn btn-info btn-sm">與前列合併</button>
-            <button id="btnClearName" class="btn btn-secondary btn-sm">清除講者名</button>
+            <button id="btnDelete" class="btn btn-danger btn-sm">刪除</button>
+            <button id="btnDuplicate" class="btn btn-warning btn-sm">複製</button>
+            <button id="btnMerge" class="btn btn-info btn-sm">合併</button>
+            <!-- <button id="btnClearName" class="btn btn-secondary btn-sm">清除講者名</button>
             <button id="btnToggleSelect" class="btn btn-secondary btn-sm">啟用多選</button>
-            <button id="btnDeleteSelected" class="btn btn-danger btn-sm" style="display:none;">刪除選取</button>
+            <button id="btnDeleteSelected" class="btn btn-danger btn-sm" style="display:none;">刪除選取</button> -->
 
         </div>
       </div>
@@ -119,6 +119,25 @@ tr.active {
 
   </div>
 
+<!-- loading -->
+<div id="loading" class="position-fixed w-100 top-0 start-0" style="height:100vh;display:none"><div id="loading-gif" class="position-absolute top-50 start-50 translate-middle" style="z-index:1030;width:3rem;height:3rem">
+<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" stroke="#555">
+  <g fill="none" fill-rule="evenodd">
+    <circle cx="30" cy="30" r="26" stroke-opacity="0.2" stroke-width="6"/>
+    <path d="M56 30c0-14.36-11.64-26-26-26" stroke="#555" stroke-width="6">
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        from="0 30 30"
+        to="360 30 30"
+        dur="1s"
+        repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>
+</div></div>
+
+
   <script>
     const inputText = document.getElementById("inputText");
     const btnGenerate = document.getElementById("btnGenerate");
@@ -135,6 +154,7 @@ tr.active {
     const filenameInput = document.getElementById("filename");
     const btnLoad = document.getElementById("btnLoad");
     const loadFilenameInput = document.getElementById("loadFilename");
+    const loading=document.getElementById('loading');
 
     let activeRow = null;
 
@@ -273,6 +293,7 @@ tr.active {
 
     // 儲存
     btnSave.addEventListener("click", async () => {
+      loading.style.display='block';
       const filename = filenameInput.value.trim()+'.txt';
       if (filename==='.txt') return alert("請輸入檔名");
 
@@ -289,14 +310,14 @@ tr.active {
       //  `{note:${d.note}, category:${d.category}, example:${d.example}}`
       //).join("\n");
 
-const textData = [...noteTable.rows].map(row => {
-  const obj = {
-    note: row.cells[1].innerText.trim(),
-    category: row.cells[2].innerText.trim(),
-    example: row.cells[0].innerText.trim()
-  };
-  return JSON.stringify(obj);
-}).join("\n");
+      const textData = [...noteTable.rows].map(row => {
+        const obj = {
+          note: row.cells[1].innerText.trim(),
+          category: row.cells[2].innerText.trim(),
+          example: row.cells[0].innerText.trim()
+        };
+        return JSON.stringify(obj);
+      }).join("\n");
       
       const url=`${backendURL}/lesson/add`;
       await fetch(url, {
@@ -305,12 +326,14 @@ const textData = [...noteTable.rows].map(row => {
         body: JSON.stringify({ filename, content: textData })
       });
 
+      loading.style.display='none';
       alert("已儲存到雲端");
     });
 
 
     // 載入
     btnLoad.addEventListener("click", async () => {
+      loading.style.display='block';
       const filename = loadFilenameInput.value.trim()+'.txt';
       if (filename==='.txt') return alert("請輸入檔名");
 
@@ -347,6 +370,7 @@ const textData = [...noteTable.rows].map(row => {
       toolBox.style.display = "block";
       tableContainer.style.display = "block";
       document.getElementById("saveSection").style.display = "flex";
+      loading.style.display='none';
 
     });
 
