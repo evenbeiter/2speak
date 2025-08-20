@@ -139,19 +139,28 @@
       return text.match(/[^.!?。！？\n]+[.!?。！？]?/g) || [];
     }
 
+    // 檢查若有標點符號且不被[]包裹 => 要插入列
+    function addRow(str) {
+      const hasPunc = /[.,!?;:'"\-()[\]{}]/.test(str);  // 是否有英文標點符號
+      const wrapped = /^\[.*\]$/.test(str);             // 是否完整被 [] 包裹
+      return hasPunc && !wrapped;
+    }
+
     // 生成表格
     btnGenerate.addEventListener("click", () => {
       noteTable.innerHTML = "";
       const sentences = splitSentences(inputText.value.trim());
       sentences.forEach(s => {
-        const row = noteTable.insertRow();
-        row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${s.trim()}</td>`;
-        row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記"></td>`;
-        row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解"></td>`;
-        // row.insertCell(0).innerText = s.trim();
-        // row.insertCell(1).innerText = "";
-        // row.insertCell(2).innerText = "";
-        for (let cell of row.cells) cell.setAttribute("contenteditable", "true");
+        if (addRow(s)){
+          const row = noteTable.insertRow();
+          row.insertCell(0).outerHTML = `<td contenteditable="true" data-label="句子">${s.replace(/\b([A-Z\s]+): /g,'').trim()}</td>`;
+          row.insertCell(1).outerHTML = `<td contenteditable="true" data-label="筆記"></td>`;
+          row.insertCell(2).outerHTML = `<td contenteditable="true" data-label="註解"></td>`;
+          // row.insertCell(0).innerText = s.trim();
+          // row.insertCell(1).innerText = "";
+          // row.insertCell(2).innerText = "";
+          for (let cell of row.cells) cell.setAttribute("contenteditable", "true");
+        }
       });
       inputArea.style.display = "none";
       toolBox.style.display = "block";
