@@ -147,9 +147,9 @@ tr.active {
     const btnDelete = document.getElementById("btnDelete");
     const btnDuplicate = document.getElementById("btnDuplicate");
     const btnMerge = document.getElementById("btnMerge");
-    const btnClearName = document.getElementById("btnClearName");
-    const btnToggleSelect = document.getElementById("btnToggleSelect");
-    const btnDeleteSelected = document.getElementById("btnDeleteSelected");
+    // const btnClearName = document.getElementById("btnClearName");
+    // const btnToggleSelect = document.getElementById("btnToggleSelect");
+    // const btnDeleteSelected = document.getElementById("btnDeleteSelected");
     const btnSave = document.getElementById("btnSave");
     const filenameInput = document.getElementById("filename");
     const btnLoad = document.getElementById("btnLoad");
@@ -281,12 +281,12 @@ tr.active {
 
 
     // 清除講者名
-    btnClearName.addEventListener("click", () => {
-        const hh = document.querySelectorAll('[data-label="句子"]');
-        for (let h of hh){
-            h.innerText=h.innerText.replace(/\b([A-Z\s]+): /g,'');
-        }
-    });
+    // btnClearName.addEventListener("click", () => {
+    //     const hh = document.querySelectorAll('[data-label="句子"]');
+    //     for (let h of hh){
+    //         h.innerText=h.innerText.replace(/\b([A-Z\s]+): /g,'');
+    //     }
+    // });
 
 
     const backendURL = 'https://newsbeiter.onrender.com';
@@ -378,63 +378,63 @@ tr.active {
 
 // 選取 & 批次刪除
 
-let multiSelectEnabled = false;
+// let multiSelectEnabled = false;
 
-btnToggleSelect.addEventListener("click", () => {
-  multiSelectEnabled = !multiSelectEnabled;
+// btnToggleSelect.addEventListener("click", () => {
+//   multiSelectEnabled = !multiSelectEnabled;
 
-  if (multiSelectEnabled) {
-    btnToggleSelect.innerText = "停用多選";
-    btnDeleteSelected.style.display = "inline-block";
+//   if (multiSelectEnabled) {
+//     btnToggleSelect.innerText = "停用多選";
+//     btnDeleteSelected.style.display = "inline-block";
 
-    // 在每一列最前面加上 checkbox
-    [...noteTable.rows].forEach(row => {
-      if (!row.querySelector("input[type='checkbox']")) {
-        const checkboxCell = row.insertCell(1);  // 在最前面插入一個欄位
-        checkboxCell.innerHTML = `<input type="checkbox" class="row-selector">`;
-      }
-    });
+//     // 在每一列最前面加上 checkbox
+//     [...noteTable.rows].forEach(row => {
+//       if (!row.querySelector("input[type='checkbox']")) {
+//         const checkboxCell = row.insertCell(1);  // 在最前面插入一個欄位
+//         checkboxCell.innerHTML = `<input type="checkbox" class="row-selector">`;
+//       }
+//     });
 
-    // 表頭也加一個空白 th
-    const theadRow = document.querySelector("thead tr");
-    if (theadRow && !theadRow.querySelector(".select-col")) {
-      const th = document.createElement("th");
-      th.classList.add("select-col");
-      th.innerText = "選取";
-      theadRow.insertBefore(th, theadRow.children[1]);
-    }
+//     // 表頭也加一個空白 th
+//     const theadRow = document.querySelector("thead tr");
+//     if (theadRow && !theadRow.querySelector(".select-col")) {
+//       const th = document.createElement("th");
+//       th.classList.add("select-col");
+//       th.innerText = "選取";
+//       theadRow.insertBefore(th, theadRow.children[1]);
+//     }
 
-  } else {
-    btnToggleSelect.innerText = "啟用多選";
-    btnDeleteSelected.style.display = "none";
+//   } else {
+//     btnToggleSelect.innerText = "啟用多選";
+//     btnDeleteSelected.style.display = "none";
 
-    // 移除每列的 checkbox
-    [...noteTable.rows].forEach(row => {
-      if (row.cells[1].querySelector("input[type='checkbox']")) {
-        row.deleteCell(1);
-      }
-    });
+//     // 移除每列的 checkbox
+//     [...noteTable.rows].forEach(row => {
+//       if (row.cells[1].querySelector("input[type='checkbox']")) {
+//         row.deleteCell(1);
+//       }
+//     });
 
-    // 移除表頭的「選取」
-    const theadRow = document.querySelector("thead tr");
-    if (theadRow && theadRow.querySelector(".select-col")) {
-      theadRow.removeChild(theadRow.querySelector(".select-col"));
-    }
-  }
-});
+//     // 移除表頭的「選取」
+//     const theadRow = document.querySelector("thead tr");
+//     if (theadRow && theadRow.querySelector(".select-col")) {
+//       theadRow.removeChild(theadRow.querySelector(".select-col"));
+//     }
+//   }
+// });
 
-btnDeleteSelected.addEventListener("click", () => {
-  const checkboxes = noteTable.querySelectorAll("tbody .row-selector:checked");
-  if (checkboxes.length === 0) {
-    alert("請先勾選要刪除的列！");
-    return;
-  }
+// btnDeleteSelected.addEventListener("click", () => {
+//   const checkboxes = noteTable.querySelectorAll("tbody .row-selector:checked");
+//   if (checkboxes.length === 0) {
+//     alert("請先勾選要刪除的列！");
+//     return;
+//   }
 
-  checkboxes.forEach(cb => {
-    const row = cb.closest("tr");
-    if (row) row.remove();
-  });
-});
+//   checkboxes.forEach(cb => {
+//     const row = cb.closest("tr");
+//     if (row) row.remove();
+//   });
+// });
 
   </script>
 </body>
