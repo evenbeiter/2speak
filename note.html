@@ -363,7 +363,7 @@ tr.active {
     // 載入
     btnLoad.addEventListener("click", async () => {
       loading.style.display='block';
-      const filename = FilenameInput.value.trim()+'.txt';
+      const filename = filenameInput.value.trim()+'.txt';
       if (filename==='.txt') return alert("請輸入檔名");
 
       //filenameInput.value=filename.replace('.txt','');
