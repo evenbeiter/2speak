@@ -105,7 +105,7 @@ tr.active {
 
       <div id="topBar">
         <!-- 儲存功能 -->
-        <div class="input-group mb-2" id="saveSection">
+        <div class="input-group mb-2" id="cloudSection">
             <input type="text" id="filename" class="form-control" placeholder="yyyymmddxx">
             <button id="btnSave" class="btn sepia">儲存</button>
             <button id="btnLoad" class="btn sepia">編輯</button>
@@ -182,7 +182,7 @@ tr.active {
     const btnSave = document.getElementById("btnSave");
     const filenameInput = document.getElementById("filename");
     const btnLoad = document.getElementById("btnLoad");
-    const loadFilenameInput = document.getElementById("loadFilename");
+    //const loadFilenameInput = document.getElementById("loadFilename");
     const loading=document.getElementById('loading');
 
     let activeRow = null;
@@ -218,7 +218,7 @@ tr.active {
       inputArea.style.display = "none";
       toolBox.style.display = "block";
       tableContainer.style.display = "block";
-      document.getElementById("saveSection").style.display = "flex";
+      document.getElementById("cloudSection").style.display = "flex";
     });
 
     // 點擊列時設定 activeRow
@@ -363,10 +363,10 @@ tr.active {
     // 載入
     btnLoad.addEventListener("click", async () => {
       loading.style.display='block';
-      const filename = loadFilenameInput.value.trim()+'.txt';
+      const filename = FilenameInput.value.trim()+'.txt';
       if (filename==='.txt') return alert("請輸入檔名");
 
-      filenameInput.value=filename.replace('.txt','');
+      //filenameInput.value=filename.replace('.txt','');
 
       const url=`${backendURL}/notes/read`;
       const res = await fetch(url, {
@@ -398,7 +398,7 @@ tr.active {
       inputArea.style.display = "none";
       toolBox.style.display = "block";
       tableContainer.style.display = "block";
-      document.getElementById("saveSection").style.display = "flex";
+      document.getElementById("cloudSection").style.display = "flex";
       loading.style.display='none';
 
     });
