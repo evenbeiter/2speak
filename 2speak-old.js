@@ -30,6 +30,33 @@ get1stList('lesson','句型','')
 //get1stList(siteName, top+' | '+site[0][1],site[0][0]);
 
 
+//    LESSONS UPLOADER
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+uploadBtn.addEventListener('click', async () => {
+    let textContent = '';
+    let confirmUpload = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        textContent = await navigator.clipboard.readText();
+        if (textContent.startsWith('{')){confirmUpload = confirm('是否上傳筆記？');} else {alert('無學習內容可上傳');}
+      }
+    } catch (err) {
+      alert('無學習內容可上傳');
+    }
+    if (textContent && confirmUpload) {
+        fetch(`${backendURL}/lesson/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({content:textContent})
+        }).then(res => {
+            if (!res.ok) alert('❌ 上傳失敗');
+        });
+    }
+});
+
+
+
 //    2SPEAK LESSON
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
