@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>三欄筆記整理 App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap 5（最新版 5.x CDN，可換成你自管的檔案） -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* 三欄固定寬度：左 30%，中 60%，右 10% */
+    .layout {
+      display: grid;
+      grid-template-columns: 30% 60% 10%;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .pane {
+      border-right: 1px solid #e5e7eb;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .pane:last-child { border-right: none; }
+
+    .scroll-area {
+      overflow: auto;
+      padding: .75rem;
+      gap: .75rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 左區卡片（每日筆記） */
+    .daily-card {
+      border: 1px solid #dee2e6;
+      border-radius: .5rem;
+      padding: .5rem .6rem;
+      background: #fff;
+      cursor: grab;
+      user-select: none;
+    }
+    .daily-card:active { cursor: grabbing; }
+    .daily-card small { color: #6c757d; }
+
+    /* 中區主題卡片（可編輯） */
+    .topic-card {
+      border: 1px dashed #adb5bd;
+      border-radius: .5rem;
+      padding: .6rem .6rem .2rem .6rem;
+      background: #fcfcfd;
+      cursor: move;
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+    }
+    .topic-card[contenteditable="true"] {
+      outline: none;
+    }
+    .topic-card .grab {
+      font-size: .9rem;
+      opacity: .6;
+      cursor: grab;
+      user-select: none;
+    }
+    .topic-card .actions {
+      margin-left: auto;
+      display: flex;
+      gap: .25rem;
+    }
+    .topic-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      min-height: 80px;
+      border: 1px solid #e9ecef;
+      border-radius: .5rem;
+      padding: .5rem;
+      background: #f8f9fa;
+    }
+    .topic-drop-hint {
+      border: 2px dashed #0d6efd;
+      border-radius: .5rem;
+      min-height: 36px;
+      padding: .25rem;
+    }
+
+    /* 右區：資料夾 / 檔名 清單 */
+    .folder-item, .file-item {
+      border: 1px solid #e5e7eb;
+      border-radius: .5rem;
+      background: #fff;
+      margin-bottom: .5rem;
+    }
+    .folder-header, .file-header {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .35rem .5rem;
+      cursor: pointer;
+    }
+    .dragger {
+      opacity: .6;
+      cursor: grab;
+      user-select: none;
+    }
+    .file-name-pill {
+      flex: 1;
+      border: 1px solid #e9ecef;
+      border-radius: .35rem;
+      padding: .25rem .4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .25rem;
+      background: #f8f9fa;
+    }
+    .caret {
+      width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid #6c757d;
+      transition: transform .15s ease;
+      cursor: pointer;
+    }
+    .caret.open {
+      transform: rotate(180deg);
+    }
+    .history {
+      border-top: 1px dashed #e9ecef;
+      padding: .35rem .5rem .5rem;
+      font-size: .85rem;
+      color: #6c757d;
+    }
+
+    /* 右上工具列固定 */
+    .right-toolbar {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 2;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: .5rem;
+      margin-bottom: .5rem;
+    }
+
+    /* 小螢幕 fallback（非必要） */
+    @media (max-width: 992px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .pane { height: 33vh; }
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="layout">
+
+    <!-- 左：每日筆記（雲端載入，日期 accordion，卡片可拖曳「複製」） -->
+    <aside id="leftPane" class="pane">
+      <div class="p-2 border-bottom d-flex align-items-center gap-2">
+        <h6 class="m-0">每日筆記</h6>
+        <button id="refreshDailyBtn" class="btn btn-sm btn-outline-secondary ms-auto">重新載入</button>
+      </div>
+      <div id="dailyAccordion" class="scroll-area"></div>
+    </aside>
+
+    <!-- 中：主題整理區（同時兩則，可拖入、可編輯、可排序、可儲存） -->
+    <main id="centerPane" class="pane">
+      <div class="p-2 border-bottom">
+        <h6 class="m-0">主題筆記整理區（同時 2 則）</h6>
+      </div>
+      <div class="scroll-area">
+        <!-- Topic Editor 1 -->
+        <section class="card">
+          <div class="card-body">
+            <div class="d-flex gap-2 align-items-center mb-2">
+              <input id="topic1Title" class="form-control form-control-sm" placeholder="主題 1 標題">
+              <button class="btn btn-sm btn-primary" onclick="saveTopic(0)">儲存主題 1</button>
+            </div>
+            <div class="mb-2 d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary" onclick="addBlankCard(0)">新增空白卡片</button>
+              <div class="text-muted small align-self-center">可拖曳左側卡片到此，或在內部拖曳排序</div>
+            </div>
+            <div id="topicList0" class="topic-list" data-topic-index="0"></div>
+          </div>
+        </section>
+
+        <!-- Topic Editor 2 -->
+        <section class="card">
+          <div class="card-body">
+            <div class="d-flex gap-2 align-items-center mb-2">
+              <input id="topic2Title" class="form-control form-control-sm" placeholder="主題 2 標題">
+              <button class="btn btn-sm btn-primary" onclick="saveTopic(1)">儲存主題 2</button>
+            </div>
+            <div class="mb-2 d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary" onclick="addBlankCard(1)">新增空白卡片</button>
+              <div class="text-muted small align-self-center">可拖曳左側卡片到此，或在內部拖曳排序</div>
+            </div>
+            <div id="topicList1" class="topic-list" data-topic-index="1"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- 右：主題資料夾 / 檔名（排序、展開、commit history、點選載入到中區輪流 1/2） -->
+    <aside id="rightPane" class="pane">
+      <div class="scroll-area">
+        <div class="right-toolbar">
+          <div class="d-flex gap-2">
+            <button id="saveFoldersOrderBtn" class="btn btn-sm btn-success">儲存資料夾順序</button>
+            <button id="refreshFoldersBtn" class="btn btn-sm btn-outline-secondary ms-auto">重新載入</button>
+          </div>
+          <div class="input-group input-group-sm mt-2">
+            <input id="newFolderName" class="form-control" placeholder="新增資料夾名稱">
+            <button class="btn btn-outline-primary" id="addFolderBtn">新增</button>
+          </div>
+        </div>
+        <div id="foldersList"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    /* =========================
+       後端 API 設定（改成你的 Render 網域）
+       ========================= */
+    const BACKEND_BASE = "https://your-render-app.onrender.com";
+
+    /* 預期後端 API（請在你的 Node.js 後端對接 GitHub）：
+       GET  /api/daily/list                        -> [{date:"20250825", filename:"20250825.txt"}, ...] 依日期倒序
+       GET  /api/daily/:date                       -> { notes:[{id:"...", content:"..."}, ...] }
+       GET  /api/topics/folders                    -> { folders:["Equities","Macro",...]} (順序即 index.json)
+       POST /api/topics/folders/order              -> { folders:[...]}   // 覆寫 index.json
+       POST /api/topics/folders/add                -> { name:"NewFolder" }
+       GET  /api/topics/folder/:folder/files       -> { files:["alpha.txt","beta.txt", ...] } // 自定順序
+       POST /api/topics/folder/:folder/order       -> { files:[...]}     // 儲存檔名排序
+       GET  /api/topics/file?folder=X&name=Y       -> { title:"...", cards:[{content:"..."}, ...] }
+       GET  /api/topics/history?folder=X&name=Y    -> { commits:[{sha, message, author, date}, ...] }
+       POST /api/topics/save                       -> body: { folder, title, cards:[{content}], replaceName? }
+                                                    // 由後端決定檔名規則與 commit 訊息
+    */
+
+    /* =========================
+       工具：簡化 fetch + Demo 後備資料
+       ========================= */
+    async function api(path, options = {}) {
+      const url = `${BACKEND_BASE}${path}`;
+      try {
+        const res = await fetch(url, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options
+        });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return await res.json();
+      } catch (err) {
+        console.warn("API 失敗，啟用 DEMO 假資料：", path, err);
+        return demoFallback(path, options);
+      }
+    }
+
+    function demoFallback(path, options) {
+      // 非正式：提供簡單假資料以便前端跑起來
+      if (path === "/api/daily/list") {
+        return { then: (cb)=> cb([
+          {date:"20250826", filename:"20250826.txt"},
+          {date:"20250825", filename:"20250825.txt"},
+          {date:"20250824", filename:"20250824.txt"},
+        ])};
+      }
+      if (path.startsWith("/api/daily/")) {
+        const date = path.split("/").pop();
+        const mk = (i)=>({id:`${date}-${i}`, content:`[${date}] 重點 ${i}\n- 事件 A\n- 事件 B\n- 想法 ${i}`});
+        return { then: (cb)=> cb({ notes:[mk(1), mk(2), mk(3), mk(4)] }) };
+      }
+      if (path === "/api/topics/folders") {
+        return { then: (cb)=> cb({ folders:["Macro","Equities","Tech"] }) };
+      }
+      if (path.startsWith("/api/topics/folder/") && path.endsWith("/files")) {
+        const folder = decodeURIComponent(path.split("/")[4]);
+        const files = folder === "Macro" ? ["2025-08-Macro1.txt","Yields-and-Growth.txt"]
+                     : folder === "Equities" ? ["SPX-Daily.txt","Valuation-Notes.txt"]
+                     : ["AI-Semiconductors.txt"];
+        return { then: (cb)=> cb({ files }) };
+      }
+      if (path.startsWith("/api/topics/file")) {
+        return { then: (cb)=> cb({
+          title: "示範主題檔",
+          cards: [
+            {content:"卡片 1：段落或重點"},
+            {content:"卡片 2：更多重點"},
+            {content:"卡片 3：結論"}
+          ]
+        })};
+      }
+      if (path.startsWith("/api/topics/history")) {
+        return { then: (cb)=> cb({
+          commits:[
+            {sha:"a1b2c3d", message:"Update points", author:"you", date:"2025-08-25"},
+            {sha:"d4e5f6g", message:"Initial commit", author:"you", date:"2025-08-24"},
+          ]
+        })};
+      }
+      if (path === "/api/topics/folders/order" || path.startsWith("/api/topics/folder/") || path === "/api/topics/folders/add" || path === "/api/topics/save") {
+        return { then: (cb)=> cb({ ok:true }) };
+      }
+      return { then: (cb)=> cb({}) };
+    }
+
+    function el(tag, attrs = {}, ...children) {
+      const node = document.createElement(tag);
+      Object.entries(attrs).forEach(([k,v])=>{
+        if (k === "class") node.className = v;
+        else if (k === "dataset") Object.assign(node.dataset, v);
+        else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.substring(2), v);
+        else if (k === "html") node.innerHTML = v;
+        else node.setAttribute(k, v);
+      });
+      for (const c of children) {
+        if (c == null) continue;
+        node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+      }
+      return node;
+    }
+
+    function toast(msg, type="info") {
+      console.log(`[${type}]`, msg);
+    }
+
+    /* =========================
+       左區：每日筆記（載入 & 展開 & 卡片拖曳）
+       ========================= */
+    const dailyAccordion = document.getElementById("dailyAccordion");
+    document.getElementById("refreshDailyBtn").addEventListener("click", loadDailyList);
+
+    async function loadDailyList() {
+      dailyAccordion.innerHTML = "";
+      const list = await api("/api/daily/list");
+      (list || []).forEach(item => {
+        const key = item.date;
+        const body = el("div", { class: "mt-2", id:`day-${key}-body`, style:"display:none" });
+        const header = el("div", { class:"d-flex align-items-center justify-content-between" },
+          el("button", {
+            class:"btn btn-sm btn-outline-dark",
+            onclick: ()=> toggleDay(key)
+          }, `${item.date}`),
+          el("small", {class:"text-muted"}, item.filename)
+        );
+        dailyAccordion.appendChild(el("div", { class:"border rounded p-2 bg-white" }, header, body));
+      });
+    }
+
+    async function toggleDay(date) {
+      const body = document.getElementById(`day-${date}-body`);
+      const open = body.style.display !== "none";
+      if (open) {
+        body.style.display = "none";
+        body.innerHTML = "";
+        return;
+      }
+      // 展開並載入該日筆記 -> 生成可拖曳卡片
+      const data = await api(`/api/daily/${date}`);
+      body.innerHTML = "";
+      (data?.notes || []).forEach(note => {
+        const card = el("div", {
+          class:"daily-card",
+          draggable:"true",
+          dataset:{ payload: JSON.stringify({ source:"daily", date, id:note.id, content:note.content }) },
+          ondragstart: dailyDragStart
+        },
+          el("div", {class:"fw-semibold mb-1"}, `# ${note.id}`),
+          el("pre", {class:"mb-1", style:"white-space:pre-wrap"}, note.content),
+          el("small", {}, `拖曳到中區以「複製」此卡片`)
+        );
+        body.appendChild(card);
+      });
+      body.style.display = "";
+    }
+
+    function dailyDragStart(e) {
+      const payload = e.currentTarget.dataset.payload;
+      e.dataTransfer.setData("application/json", payload);
+      e.dataTransfer.effectAllowed = "copy";
+    }
+
+    /* =========================
+       中區：主題整理（兩則），可拖入左卡片（複製）、內部拖曳排序、增刪卡片、儲存
+       ========================= */
+    const topicLists = [ document.getElementById("topicList0"), document.getElementById("topicList1") ];
+    let nextOpenIndex = 0; // 右側點檔案時，輪流載入 0/1
+
+    // 設定中區 Drop 事件（接受左區卡片並「複製」成 topic-card）
+    topicLists.forEach(list=>{
+      list.addEventListener("dragover", e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        list.classList.add("topic-drop-hint");
+      });
+      list.addEventListener("dragleave", ()=> list.classList.remove("topic-drop-hint"));
+      list.addEventListener("drop", e => {
+        e.preventDefault();
+        list.classList.remove("topic-drop-hint");
+        try {
+          const json = e.dataTransfer.getData("application/json");
+          if (!json) return;
+          const data = JSON.parse(json);
+          // 只接受從左區 daily 來的 payload 或從中區內部拖曳的重排
+          if (data.__type === "reorder") {
+            // 內部重排（HTML5 DnD 移動節點）
+            const cardId = data.cardId;
+            const moving = document.getElementById(cardId);
+            if (moving && moving.parentElement !== list) {
+              list.appendChild(moving); // 允許跨主題移動？
+            } else if (moving) {
+              list.appendChild(moving);
+            }
+          } else if (data.source === "daily") {
+            addTopicCard(list, data.content);
+          }
+        } catch (err) {}
+      });
+    });
+
+    function addTopicCard(listEl, content = "") {
+      const id = `tc-${Math.random().toString(36).slice(2,9)}`;
+      const card = el("div", {
+        id,
+        class:"topic-card",
+        draggable:"true",
+        ondragstart: (e)=>{
+          e.dataTransfer.setData("application/json", JSON.stringify({__type:"reorder", cardId:id}));
+          e.dataTransfer.effectAllowed = "move";
+        }
+      },
+        el("div", {class:"grab", title:"拖曳移動"}, "⠿"),
+        el("div", {class:"flex-grow-1", contenteditable:"true", spellcheck:"false", style:"white-space:pre-wrap"}, content),
+        el("div", {class:"actions"},
+          el("button", {class:"btn btn-sm btn-outline-danger", onclick: ()=> card.remove()}, "刪除")
+        )
+      );
+      listEl.appendChild(card);
+    }
+
+    function addBlankCard(topicIdx) {
+      addTopicCard(topicLists[topicIdx], "");
+    }
+
+    function collectTopic(topicIdx) {
+      const title = document.getElementById(topicIdx === 0 ? "topic1Title" : "topic2Title").value.trim();
+      const cards = [ ...topicLists[topicIdx].querySelectorAll(".topic-card .flex-grow-1") ]
+        .map(div => ({ content: div.innerText }));
+      return { title, cards };
+    }
+
+    async function saveTopic(topicIdx) {
+      const folder = await pickSaveFolder(); // 讓使用者選擇要存到哪個資料夾（簡易實作）
+      if (!folder) return;
+      const payload = collectTopic(topicIdx);
+      if (!payload.title) {
+        alert("請先輸入主題標題");
+        return;
+      }
+      await api("/api/topics/save", {
+        method: "POST",
+        body: JSON.stringify({ folder, title: payload.title, cards: payload.cards })
+      });
+      toast(`主題 ${topicIdx+1} 已儲存到 ${folder}`, "success");
+      // 儲存後，右側資料夾可能新增檔案，刷新該資料夾檔名
+      await loadFolders(); // 也可只 refresh 當前 folder
+    }
+
+    async function pickSaveFolder() {
+      // 右側目前的資料夾清單
+      const names = [ ...document.querySelectorAll("#foldersList .folder-item") ].map(n => n.dataset.name);
+      if (names.length === 0) {
+        alert("目前沒有資料夾，請先在右側新增。");
+        return null;
+      }
+      const name = prompt(`要儲存到哪個資料夾？\n可用：\n- ${names.join("\n- ")}`, names[0]);
+      if (!name) return null;
+      if (!names.includes(name)) {
+        const ok = confirm(`找不到資料夾「${name}」，要新增嗎？`);
+        if (!ok) return null;
+        await api("/api/topics/folders/add", { method:"POST", body: JSON.stringify({ name }) });
+      }
+      return name;
+    }
+
+    /* =========================
+       右區：資料夾/檔名（載入、拖曳排序、展開、commit history、點檔案載入中區輪流）
+       ========================= */
+    const foldersListEl = document.getElementById("foldersList");
+    document.getElementById("refreshFoldersBtn").addEventListener("click", loadFolders);
+    document.getElementById("saveFoldersOrderBtn").addEventListener("click", saveFoldersOrder);
+    document.getElementById("addFolderBtn").addEventListener("click", async ()=>{
+      const name = document.getElementById("newFolderName").value.trim();
+      if (!name) return;
+      await api("/api/topics/folders/add", { method:"POST", body: JSON.stringify({ name }) });
+      document.getElementById("newFolderName").value = "";
+      await loadFolders();
+    });
+
+    async function loadFolders() {
+      foldersListEl.innerHTML = "";
+      const data = await api("/api/topics/folders");
+      (data?.folders || []).forEach(name=>{
+        foldersListEl.appendChild(renderFolder(name));
+      });
+    }
+
+    function renderFolder(name) {
+      const item = el("div", {class:"folder-item", draggable:"true", dataset:{ name }});
+      // 拖曳排序資料夾
+      item.addEventListener("dragstart", e=>{
+        e.dataTransfer.setData("text/folder", name);
+        e.dataTransfer.effectAllowed = "move";
+      });
+      item.addEventListener("dragover", e=>{ e.preventDefault(); e.dataTransfer.dropEffect="move"; });
+      item.addEventListener("drop", e=>{
+        e.preventDefault();
+        const from = e.dataTransfer.getData("text/folder");
+        if (!from || from===name) return;
+        const fromEl = [ ...foldersListEl.children ].find(n=> n.dataset.name===from);
+        foldersListEl.insertBefore(fromEl, item); // 放到目前這個前面
+      });
+
+      const header = el("div", {class:"folder-header"},
+        el("span", {class:"dragger", title:"拖曳資料夾排序"}, "⠿"),
+        el("strong", {}, name),
+        el("button", {class:"btn btn-sm btn-outline-secondary ms-auto", onclick: ()=> toggleFolderFiles(item, name)}, "展開 / 收合"),
+        el("button", {class:"btn btn-sm btn-outline-primary", onclick: ()=> saveFileOrder(name, item)}, "儲存檔名順序")
+      );
+      const filesWrap = el("div", {class:"px-2 pb-2", style:"display:none"});
+      item.append(header, filesWrap);
+      return item;
+    }
+
+    async function toggleFolderFiles(folderEl, folderName) {
+      const wrap = folderEl.querySelector("div.px-2");
+      const open = wrap.style.display !== "none";
+      if (open) {
+        wrap.style.display = "none";
+        wrap.innerHTML = "";
+        return;
+      }
+      const data = await api(`/api/topics/folder/${encodeURIComponent(folderName)}/files`);
+      wrap.innerHTML = "";
+      (data?.files || []).forEach(file=>{
+        wrap.appendChild(renderFileItem(folderName, file));
+      });
+      wrap.style.display = "";
+    }
+
+    function renderFileItem(folderName, fileName) {
+      const id = `file-${folderName}-${fileName}`.replace(/[^\w-]+/g,"_");
+      const box = el("div", {class:"file-item", draggable:"true", id});
+      // 拖曳排序檔名（同資料夾）
+      box.addEventListener("dragstart", e=>{
+        e.dataTransfer.setData("text/file", JSON.stringify({ folder: folderName, file: fileName, id }));
+        e.dataTransfer.effectAllowed = "move";
+      });
+      box.addEventListener("dragover", e=>{ e.preventDefault(); e.dataTransfer.dropEffect="move"; });
+      box.addEventListener("drop", e=>{
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData("text/file") || "{}");
+        if (!data.file || data.folder !== folderName) return;
+        const fromEl = document.getElementById(data.id);
+        box.parentElement.insertBefore(fromEl, box);
+      });
+
+      const caret = el("div", {class:"caret", title:"展開/收合 commit history"});
+      const header = el("div", {class:"file-header"},
+        el("span", {class:"dragger", title:"拖曳檔名排序"}, "⠿"),
+        el("div", {class:"file-name-pill", onclick: ()=> openTopicFile(folderName, fileName)},
+          el("span", {style:"overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px"}, fileName),
+          el("span", {class:"text-muted small"}, "（點此載入）")
+        ),
+        el("div", {style:"width:10px"}, caret)
+      );
+      const history = el("div", {class:"history", style:"display:none"}, "讀取中…");
+      header.lastChild.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const open = history.style.display !== "none";
+        if (open) {
+          history.style.display = "none";
+          caret.classList.remove("open");
+        } else {
+          caret.classList.add("open");
+          history.style.display = "";
+          const data = await api(`/api/topics/history?folder=${encodeURIComponent(folderName)}&name=${encodeURIComponent(fileName)}`);
+          history.innerHTML = (data?.commits || []).map(c =>
+            `<div class="mb-1"><code>${c.sha}</code> — ${escapeHtml(c.message)}<br><span class="text-muted">${escapeHtml(c.author)} · ${escapeHtml(c.date)}</span></div>`
+          ).join("") || '<div class="text-muted">（無紀錄）</div>';
+        }
+      });
+
+      box.append(header, history);
+      return box;
+    }
+
+    async function saveFoldersOrder() {
+      const folders = [ ...foldersListEl.children ].map(n=> n.dataset.name);
+      await api("/api/topics/folders/order", { method:"POST", body: JSON.stringify({ folders }) });
+      toast("已儲存資料夾順序", "success");
+    }
+
+    async function saveFileOrder(folderName, folderEl) {
+      const wrap = folderEl.querySelector("div.px-2");
+      const files = [ ...wrap.children ].map(n=>{
+        const nameEl = n.querySelector(".file-name-pill span");
+        return nameEl?.textContent?.trim() || "";
+      }).filter(Boolean);
+      await api(`/api/topics/folder/${encodeURIComponent(folderName)}/order`, {
+        method: "POST",
+        body: JSON.stringify({ files })
+      });
+      toast(`已儲存 ${folderName} 的檔名順序`, "success");
+    }
+
+    async function openTopicFile(folder, name) {
+      const data = await api(`/api/topics/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}`);
+      const idx = nextOpenIndex; // 0 或 1
+      (idx === 0 ? document.getElementById("topic1Title") : document.getElementById("topic2Title")).value = data?.title || name;
+      const list = topicLists[idx];
+      list.innerHTML = "";
+      (data?.cards || []).forEach(c=> addTopicCard(list, c.content || ""));
+      nextOpenIndex = (nextOpenIndex + 1) % 2; // 下一次換另一個
+      // 捲動到中區
+      document.getElementById("centerPane").scrollIntoView({behavior:"smooth", block:"nearest"});
+    }
+
+    /* =========================
+       小工具
+       ========================= */
+    function escapeHtml(s="") {
+      return s.replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+    }
+
+    /* =========================
+       啟動：載入左、右
+       ========================= */
+    loadDailyList();
+    loadFolders();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
