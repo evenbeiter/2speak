@@ -10,7 +10,7 @@
     /* 三欄固定寬度：左 30%，中 60%，右 10% */
     .layout {
       display: grid;
-      grid-template-columns: 30% 60% 10%;
+      grid-template-columns: 27% 54% 19%;
       height: 100vh;
       overflow: hidden;
     }
@@ -164,13 +164,61 @@
       <div id="dailyAccordion" class="scroll-area"></div>
     </aside>
 
+
     <!-- 中：主題整理區（同時兩則，可拖入、可編輯、可排序、可儲存） -->
     <main id="centerPane" class="pane">
+      <div class="p-2 border-bottom">
+        <h6 class="m-0">主題筆記整理區</h6>
+      </div>
+      <div class="border p-2">
+        <div class="row h-100">
+          <!-- 主題筆記 1 -->
+          <div class="col-6 d-flex flex-column border-end">
+          <section class="card">
+            <div class="card-body">
+              <div class="d-flex gap-2 align-items-center mb-2">
+                <input id="topic1Title" class="form-control form-control-sm" placeholder="標題">
+                <button class="btn btn-sm btn-primary" onclick="saveTopic(0)">儲存</button>
+              </div>
+              <div class="mb-2 d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="addBlankCard(0)">新增空白卡片</button>
+                <div class="text-muted small align-self-center">可拖曳左側卡片到此，或在內部拖曳排序</div>
+              </div>
+              <div id="topicList0" class="topic-list" data-topic-index="0"></div>
+            </div>
+          </section>
+          </div>
+
+          
+          <!-- 主題筆記 2 -->
+          <div class="col-6 d-flex flex-column">
+          <section class="card">
+            <div class="card-body">
+              <div class="d-flex gap-2 align-items-center mb-2">
+                <input id="topic2Title" class="form-control form-control-sm" placeholder="標題">
+                <button class="btn btn-sm btn-primary" onclick="saveTopic(1)">儲存</button>
+              </div>
+              <div class="mb-2 d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="addBlankCard(1)">新增空白卡片</button>
+                <div class="text-muted small align-self-center">可拖曳左側卡片到此，或在內部拖曳排序</div>
+              </div>
+              <div id="topicList1" class="topic-list" data-topic-index="1"></div>
+            </div>
+          </section>
+          </div>
+        </div>
+      </div>
+    </main>
+
+
+
+    <!-- 中：主題整理區（同時兩則，可拖入、可編輯、可排序、可儲存） -->
+    <!-- <main id="centerPane" class="pane">
       <div class="p-2 border-bottom">
         <h6 class="m-0">主題筆記整理區（同時 2 則）</h6>
       </div>
       <div class="scroll-area">
-        <!-- Topic Editor 1 -->
+        Topic Editor 1
         <section class="card">
           <div class="card-body">
             <div class="d-flex gap-2 align-items-center mb-2">
@@ -185,7 +233,7 @@
           </div>
         </section>
 
-        <!-- Topic Editor 2 -->
+        Topic Editor 2
         <section class="card">
           <div class="card-body">
             <div class="d-flex gap-2 align-items-center mb-2">
@@ -200,7 +248,7 @@
           </div>
         </section>
       </div>
-    </main>
+    </main> -->
 
     <!-- 右：主題資料夾 / 檔名（排序、展開、commit history、點選載入到中區輪流 1/2） -->
     <aside id="rightPane" class="pane">
@@ -224,7 +272,7 @@
     /* =========================
        後端 API 設定（改成你的 Render 網域）
        ========================= */
-    const BACKEND_BASE = "https://your-render-app.onrender.com";
+    const BACKEND_BASE = "https://app-name.onrender.com";
 
     /* 預期後端 API（請在你的 Node.js 後端對接 GitHub）：
        GET  /api/daily/list                        -> [{date:"20250825", filename:"20250825.txt"}, ...] 依日期倒序
@@ -443,6 +491,38 @@
     function addBlankCard(topicIdx) {
       addTopicCard(topicLists[topicIdx], "");
     }
+
+
+    // 設定主題區的卡片也可以拖曳
+    function makeTopicCard(card) {
+      card.setAttribute("draggable", "true");
+
+      card.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("topic-card-id", card.id);
+        e.dataTransfer.effectAllowed = "move";
+      });
+
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        card.style.borderTop = "2px solid blue"; // 提示插入位置
+      });
+
+      card.addEventListener("dragleave", () => {
+        card.style.borderTop = "";
+      });
+
+      card.addEventListener("drop", (e) => {
+        e.preventDefault();
+        card.style.borderTop = "";
+
+        let draggedId = e.dataTransfer.getData("topic-card-id");
+        if (draggedId) {
+          let draggedCard = document.getElementById(draggedId);
+          card.parentNode.insertBefore(draggedCard, card); // 插入排序
+        }
+      });
+    }
+
 
     function collectTopic(topicIdx) {
       const title = document.getElementById(topicIdx === 0 ? "topic1Title" : "topic2Title").value.trim();
