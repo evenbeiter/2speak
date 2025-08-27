@@ -1,0 +1,140 @@
+:root{
+  --left-width: 30vw; /* 30% */
+  --right-width: 70vw; /* 70% */
+}
+
+.left-col { width: var(--left-width); min-height: 80vh; overflow: auto; }
+.right-col { width: var(--right-width); min-height: 80vh; overflow: auto; }
+
+/* 每日筆記卡片 */
+.daily-note-card {
+  border: 1px solid #ddd;
+  border-radius: .375rem;
+  padding: .5rem .75rem;
+  margin-bottom: .5rem;
+  background: #fff;
+  cursor: grab;
+  user-select: none;
+}
+.daily-note-card.filed {
+  background: #f1f1f1;
+  color: #888;
+}
+
+/* 主題：folder 區塊 */
+.folder {
+  border: 1px solid #ddd;
+  border-radius: .5rem;
+  overflow: hidden;
+  background: #fff;
+}
+.folder-header {
+  background: #f8f9fa;
+  padding: .5rem .75rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.folder-header [contenteditable] {
+  outline: none;
+  min-width: 4em;
+}
+.folder-actions .btn {
+  padding: .125rem .5rem;
+}
+
+/* 主題卡片 grid */
+.folder-grid {
+  padding: .75rem;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr)); /* 一列六個，未來可由 JS 調整 */
+  gap: .5rem;
+}
+
+/* 主題卡片（小標） */
+.topic-card {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: .375rem;
+  padding: .5rem .5rem .25rem;
+  background: #fff;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.topic-card [contenteditable] { outline: none; }
+.topic-card .title-row {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+.topic-card .title-row .title {
+  flex: 1;
+  font-weight: 600;
+}
+
+/* DnD 提示 */
+.drop-target {
+  outline: 2px dashed #6c757d;
+}
+
+/* 複製成功勾勾動畫 */
+.copy-success {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(25,135,84,0.1);
+  animation: fadeOut .9s ease forwards;
+}
+.copy-success::after {
+  content: "✓";
+  font-size: 2rem;
+  color: #198754;
+  font-weight: 700;
+}
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Modal 內的筆記列表（可拖曳排序 + 可編輯） */
+.stack-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.stack-item {
+  display: flex;
+  align-items: stretch;
+  gap: .5rem;
+}
+.stack-item .handle {
+  width: 2.25rem;
+  border: 1px solid #ddd;
+  border-radius: .375rem;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  background: #fafafa;
+  cursor: grab;
+  user-select: none;
+}
+.stack-item .content {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: .375rem;
+  padding: .5rem .75rem;
+  background: #fff;
+}
+.stack-item .tools {
+  display: flex;
+  gap: .25rem;
+  align-items: center;
+}
+.stack-item.selected .content {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+}
+.stack-item [contenteditable] { outline: none; }
