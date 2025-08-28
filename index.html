@@ -79,12 +79,14 @@
     /* 右區 */
     #rightPane {
       padding:.75rem;
+      padding-top: 0rem;
       overflow:auto;
     }
     #rightToolbar {
       display:flex;
       gap:.5rem;
       align-items:center;
+      padding: .6rem;
       margin-bottom:.6rem;
       position:sticky;
       top:0;
@@ -207,6 +209,8 @@
       .app { grid-template-columns: 100%; grid-auto-rows: 40vh 60vh; }
       .folder-grid { grid-template-columns: repeat(3, 1fr); }
     }
+
+    .time{font-size:0.8rem}img{width:100%}
   </style>
 </head>
 <body>
@@ -273,6 +277,9 @@
     </div>
   </div>
 
+<!-- bootstrap js -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 /* =======================
    Config / Backend base
@@ -281,10 +288,10 @@ const BACKEND_BASE = "https://newsbeiter.onrender.com"; // <- 改成你的 Rende
 
 /* =======================
    API 規格（前端依賴）
-   - GET  /api/daily/list                      -> [{date:"20250826", filename:"20250826.txt"}, ...] (倒序)
-   - GET  /api/daily/:date                     -> { notes: [ {id, content, filed?}, ... ] }  // notes array
+   - GET  /note/list                      -> [{date:"20250826", filename:"20250826.txt"}, ...] (倒序)
+   - GET  /note/read                     -> { notes: [ {id, content, filed?}, ... ] }  // notes array
    - POST /api/daily/updateFiled               -> body: { updates: [{id, filed:'y'|'n'}...] } -> {ok:true}
-   - GET  /api/topics/index                    -> { index: [ "FolderA/File1.txt", "FolderB/File2.txt", ... ] } // index.json
+   - x GET  /api/topics/index                    -> { index: [ "FolderA/File1.txt", "FolderB/File2.txt", ... ] } // index.json
    - GET  /api/topics/folder/:folder/files    -> { files: [ "File1.txt", ... ] } (順序)
    - GET  /api/topics/file?path=FolderA/File1.txt -> { title:"File1", cards:[ "note1", "note2", ... ] }
    - POST /api/topics/folders/order           -> body: { index: [ "FolderA/File1.txt", ... ] } -> {ok:true}
@@ -293,19 +300,29 @@ const BACKEND_BASE = "https://newsbeiter.onrender.com"; // <- 改成你的 Rende
    - POST /api/topics/addFile                 -> body: { folder:"F", filename:"X.txt" } -> {ok:true}
    (後端以 Octokit/GitHub REST 實作，或同樣路徑命名)
 */
-async function api(path, options={}) {
-  const url = BACKEND_BASE + path;
+async function api(path, options = {}) {
+  let url = BACKEND_BASE + path;
+
+  // 如果 options 有 query 屬性，就加到 url 後面
+  if (options.query) {
+    const params = new URLSearchParams(options.query);
+    url += "?" + params.toString();
+  }
+
   try {
     const res = await fetch(url, Object.assign({
       headers: {'Content-Type':'application/json'}
     }, options));
+
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     return await res.json();
+
   } catch (err) {
     console.warn("API 失敗，使用 Demo 假資料以維持前端互動：", path, err);
     return demoFallback(path, options);
   }
 }
+
 
 /* Demo fallback (使前端可離線測試)
    注意：demoFallback 回傳物件格式模擬實際 API（用 then-able 的方式，以維持 earlier code 風格）
@@ -363,14 +380,16 @@ let folderMap = {};      // folderName -> { files: [filenames], fileData: { file
 let modalState = { path:null }; // currently editing file path
 let clipboardCard = null; // 暫存複製的卡片內容（字串）
 let pendingFileChanges = new Set(); // paths modified in front-end not yet saved
-let pendingFiledUpdates = {}; // id -> 'y'/'n' to send when user clicks saveAllBtn
+let pendingFiledUpdates = []; // id -> 'y'/'n' to send when user clicks saveAllBtn
 
 /* =========================
-   載入並渲染每日筆記（左）
+   載入並渲染每日筆記（左）初步已完成
    ========================= */
 async function loadDailyList() {
   leftContent.innerHTML = "";
-  const list = await api("/api/daily/list");
+  const list = await api("/note/list",{
+    query: {category:"daily", rr:1}
+  });
   const days = list || [];
   for (const item of days) {
     const dayBlock = createDayBlock(item);
@@ -383,7 +402,7 @@ function createDayBlock(item) {
   const header = document.createElement("div");
   header.className = "day-header";
   const title = document.createElement("div");
-  title.textContent = `${item.date}  ${item.filename}`;
+  title.textContent = `${item.replace('.txt','')}`;
   const btn = document.createElement("button");
   btn.className = "btn btn-sm btn-outline-secondary";
   btn.textContent = "展開";
@@ -395,13 +414,16 @@ function createDayBlock(item) {
       return;
     }
     // load notes for date
-    const data = await api(`/api/daily/${item.date}`);
-    const notes = data?.notes || [];
-    dailyDataCache[item.date] = notes; // store
+    const data = await api("/note/read",{
+      method:"POST",
+      body:JSON.stringify({category:'daily',path:item})
+    });
+    const notes = data || [];
+    dailyDataCache[item.replace('.txt','')] = notes; // store
     const listEl = document.createElement("div");
     listEl.className = "notes-list";
     notes.forEach(n=>{
-      const c = createDailyCard(item.date, n);
+      const c = createDailyCard(item.replace('.txt',''), JSON.parse(n));
       listEl.appendChild(c);
     });
     wrap.appendChild(listEl);
@@ -415,13 +437,13 @@ function createDayBlock(item) {
 function createDailyCard(date, note) {
   const div = document.createElement("div");
   div.className = "daily-card";
-  div.dataset.noteId = note.id;
+  div.dataset.noteId = note.timestamp;
   div.dataset.date = date;
   div.dataset.filed = note.filed || 'n';
   if (note.filed === 'y') div.classList.add('filed');
 
   const pre = document.createElement("pre");
-  pre.textContent = note.content;
+  pre.innerHTML = note.content;
   div.appendChild(pre);
 
   // bottom controls: filed toggle
@@ -431,7 +453,7 @@ function createDailyCard(date, note) {
   ctrl.style.marginTop=".4rem";
   const meta = document.createElement("small");
   meta.className="text-muted";
-  meta.textContent = note.id;
+  meta.textContent = note.timestamp;
   const rightBtns = document.createElement("div");
   rightBtns.style.display="flex";
   rightBtns.style.gap="6px";
@@ -440,12 +462,17 @@ function createDailyCard(date, note) {
   filedBtn.className = "btn btn-sm btn-outline-secondary";
   filedBtn.textContent = note.filed==='y' ? "取消已歸檔" : "標記為已歸檔";
   filedBtn.addEventListener("click", ()=>{
-    const newv = div.dataset.filed === 'y' ? 'n' : 'y';
+    let newv = div.dataset.filed === 'y' ? 'n' : 'y';
     div.dataset.filed = newv;
     div.classList.toggle('filed', newv==='y');
     filedBtn.textContent = newv==='y' ? "取消已歸檔" : "標記為已歸檔";
     // register pending change
-    pendingFiledUpdates[note.id] = newv;
+    if (!pendingFiledUpdates.includes(date)){pendingFiledUpdates.push(date)};
+    dailyDataCache[date] = dailyDataCache[date].map(itemStr => {
+      const item = JSON.parse(itemStr);
+      if (item.timestamp === note.timestamp){item.filed=newv};
+      return JSON.stringify(item);
+    });
   });
   rightBtns.appendChild(filedBtn);
 
@@ -457,12 +484,7 @@ function createDailyCard(date, note) {
   div.draggable = true;
   div.addEventListener("dragstart", (e)=>{
     // payload: indicate source daily note; include id & content
-    e.dataTransfer.setData("application/json", JSON.stringify({
-      type:"daily-note",
-      id: note.id,
-      date,
-      content: note.content
-    }));
+    e.dataTransfer.setData("application/json", JSON.stringify(note));
     e.dataTransfer.effectAllowed = "copy";
   });
 
@@ -472,10 +494,14 @@ function createDailyCard(date, note) {
 /* =========================
    載入並渲染 folders（右）
    ========================= */
+
 async function loadIndexAndFolders() {
   foldersArea.innerHTML = "";
-  const idx = await api("/api/topics/index");
-  indexList = idx?.index || [];
+  const data = await api("/note/read",{
+    method:"POST",
+    body:JSON.stringify({category:'note',path:'index.txt'})
+  });
+  indexList = data || [];
   // Build folderMap from indexList:
   folderMap = {};
   for (const path of indexList) {
@@ -507,6 +533,7 @@ function createFolderElement(folderName) {
   const header = document.createElement("div");
   header.className = "folder-header";
   header.draggable = true;
+
   header.addEventListener("dragstart", (e)=>{
     e.dataTransfer.setData("text/folder-drag", folderName);
     e.dataTransfer.effectAllowed = "move";
@@ -555,11 +582,11 @@ function createFolderElement(folderName) {
   addFileBtn.className = "btn btn-sm btn-outline-primary";
   addFileBtn.textContent = "新增主題小標";
   addFileBtn.addEventListener("click", async ()=>{
-    const filename = prompt("請輸入主題小標（檔名），例如：MyNote.txt");
+    const filename = prompt("請輸入主題小標（檔名），例如：MyNote");
     if (!filename) return;
     // create empty file in folderMap (front-end)
     folderMap[folderName].files.push(filename);
-    folderMap[folderName].fileData[filename] = { title: filename.replace(/\.txt$/,""), cards: [], modified:true };
+    folderMap[folderName].fileData[filename] = { title: filename, cards: [], modified:true };
     indexList.push(`${folderName}/${filename}`);
     renderFolders();
   });
@@ -567,7 +594,7 @@ function createFolderElement(folderName) {
   delFolderBtn.className = "btn btn-sm btn-outline-danger";
   delFolderBtn.textContent = "刪除資料夾";
   delFolderBtn.addEventListener("click", ()=>{
-    if (!confirm(`確定要刪除資料夾 ${folderName} 及其所有檔案？（此操作會在你按下「儲存」時同步到 repo）`)) return;
+    if (!confirm(`確定要刪除資料夾 ${folderName} 及其所有檔案？`)) return;
     // remove from folderMap and update indexList
     delete folderMap[folderName];
     indexList = indexList.filter(p => !p.startsWith(folderName + "/"));
@@ -598,17 +625,17 @@ function createFolderElement(folderName) {
     e.preventDefault();
     grid.classList.remove("drop-target");
     try {
-      const txt = e.dataTransfer.getData("application/json");
-      if (txt) {
-        const payload = JSON.parse(txt);
-        if (payload.type === "daily-note") {
-          // copy this daily note content to the target folder as appending to a chosen file:
-          // Default behavior: 若拖放在 grid 空白區，會新建一檔（ask user for filename），或使用最近一個檔？
-          // For simplicity：提示使用者把內容複製到哪個主題小標（選擇）
-          handleCopyDailyToFolder(payload, folderName);
-          return;
-        }
-      }
+      // const txt = e.dataTransfer.getData("application/json");
+      // if (txt) {
+      //   const payload = JSON.parse(txt);console.log(folderName);
+      //   //if (payload.type === "daily-note") {
+      //     // copy this daily note content to the target folder as appending to a chosen file:
+      //     // Default behavior: 若拖放在 grid 空白區，會新建一檔（ask user for filename），或使用最近一個檔？
+      //     // For simplicity：提示使用者把內容複製到哪個主題小標（選擇）
+      //     handleCopyDailyToFolder(payload, folderName);
+      //     return;
+      //   //}
+      // }
       // handle move of topic-card between folders
       const mv = e.dataTransfer.getData("text/topic-move");
       if (mv) {
@@ -644,6 +671,26 @@ function createTopicCard(folderName, filename) {
   card.dataset.folder = folderName;
   card.dataset.filename = filename;
   card.draggable = true;
+
+  card.addEventListener("drop", (e)=>{
+    e.preventDefault();
+    card.classList.remove("drop-target");
+    try {
+      const txt = e.dataTransfer.getData("application/json");
+      if (txt) {
+        const payload = JSON.parse(txt);
+        //if (payload.type === "daily-note") {
+          // copy this daily note content to the target folder as appending to a chosen file:
+          // Default behavior: 若拖放在 grid 空白區，會新建一檔（ask user for filename），或使用最近一個檔？
+          // For simplicity：提示使用者把內容複製到哪個主題小標（選擇）
+          handleCopyDailyToTopic(payload, `${folderName}/${filename}`);
+          return;
+        //}
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
 
   const title = document.createElement("div");
   title.className = "title";
@@ -719,7 +766,7 @@ function createTopicCard(folderName, filename) {
     }
     folderMap[folderName].fileData[card.dataset.filename].cards.push(clipboardCard);
     folderMap[folderName].fileData[card.dataset.filename].modified = true;
-    pendingFileChanges.add(`${folderName}/${card.dataset.filename}`);
+    pendingFileChanges.add(`${folderName}/${card.dataset.filename}.txt`);
     // briefly show check animation on card
     animateCheckOnCard(card);
   });
@@ -802,51 +849,79 @@ function animateCheckOnCard(card) {
    handle copy daily -> folder (user dragged a daily-note into a folder grid)
    將 daily note 複製到某 folder 的某檔（讓使用者選或新建）
    ========================= */
-async function handleCopyDailyToFolder(payload, targetFolder) {
+async function handleCopyDailyToTopic(payload, targetTopic) {
   // payload: {type:"daily-note", id, date, content}
   // ask user which file in targetFolder to append to (or create new)
-  const files = folderMap[targetFolder].files || [];
-  let choice;
-  if (files.length === 0) {
-    if (!confirm(`資料夾 ${targetFolder} 尚無檔案，是否建立新檔並加入筆記？`)) return;
-    const fname = prompt("請輸入新檔名（含 .txt）", "newnote.txt");
-    if (!fname) return;
-    folderMap[targetFolder].files.push(fname);
-    folderMap[targetFolder].fileData[fname] = { title: fname.replace(/\.txt$/,""), cards: [] };
-    indexList.push(`${targetFolder}/${fname}`);
-    choice = fname;
-  } else {
-    // ask user to pick one (簡單 prompt listing files)
-    const sel = prompt(`選擇要加入到哪個檔案（輸入數字）\n${files.map((f,i)=> `${i+1}. ${f}`).join("\n")}\n輸入 N 以新檔`, "1");
-    if (!sel) return;
-    if (sel.toUpperCase() === 'N') {
-      const fname = prompt("請輸入新檔名（含 .txt）", "newnote.txt");
-      if (!fname) return;
-      folderMap[targetFolder].files.push(fname);
-      folderMap[targetFolder].fileData[fname] = { title: fname.replace(/\.txt$/,""), cards: [] };
-      indexList.push(`${targetFolder}/${fname}`);
-      choice = fname;
-    } else {
-      const idx = parseInt(sel,10)-1;
-      if (isNaN(idx) || idx < 0 || idx >= files.length) { alert("選擇錯誤"); return; }
-      choice = files[idx];
-    }
-  }
+  const seg = targetTopic.split('/');
+  const targetFolder = seg[0];
+  const files = folderMap[seg[0]].files || [];
+  const choice = seg[1];
+  // if (files.length === 0) {
+  //   if (!confirm(`資料夾 ${targetFolder} 尚無檔案，是否建立新檔並加入筆記？`)) return;
+  //   const fname = prompt("請輸入新檔名", "newnote");
+  //   if (!fname) return;
+  //   folderMap[targetFolder].files.push(fname);
+  //   folderMap[targetFolder].fileData[fname] = { path: `${targetFolder}/${fname}.txt`, content:'' };
+  //   indexList.push(`${targetFolder}/${fname}`);
+  //   choice = fname;
+  // } else {console.log('2');
+  //   // ask user to pick one (簡單 prompt listing files)
+  //   const sel = prompt(`選擇要加入到哪個檔案（輸入數字）\n${files.map((f,i)=> `${i+1}. ${f}`).join("\n")}\n輸入 N 以新檔`, "1");
+  //   if (!sel) return;
+  //   if (sel.toUpperCase() === 'N') {
+  //     const fname = prompt("請輸入新檔名（含 .txt）", "newnote.txt");
+  //     if (!fname) return;
+  //     folderMap[targetFolder].files.push(fname);
+  //     folderMap[targetFolder].fileData[fname] = { title: fname.replace(/\.txt$/,""), cards: [] };
+  //     indexList.push(`${targetFolder}/${fname}`);
+  //     choice = fname;
+  //   } else {
+  //     const idx = parseInt(sel,10)-1;
+  //     if (isNaN(idx) || idx < 0 || idx >= files.length) { alert("選擇錯誤"); return; }
+  //     choice = files[idx];
+  //   }
+  // }console.log('choice: '+choice);
   // ensure fileData
-  if (!folderMap[targetFolder].fileData[choice]) folderMap[targetFolder].fileData[choice] = { title: choice.replace(/\.txt$/,""), cards: [] };
+  //if (!folderMap[targetFolder].fileData[choice]) folderMap[targetFolder].fileData[choice] = { title: choice.replace(/\.txt$/,""), cards: [] };
+
+  let r = await api("/note/read",{
+    method:"POST",
+    body:JSON.stringify({category:'note',path:`${targetFolder}/${choice}.txt`})
+  });
+
+  console.log(r);
+
+  if (!folderMap[targetFolder].fileData[choice]) {
+    r.push(JSON.stringify(payload));
+    folderMap[targetFolder].fileData[choice] = [];
+    folderMap[targetFolder].fileData[choice].cards = r;
+  }
+  console.log(r);
+  console.log('target folder: '+targetFolder);
+  console.log('choice: '+choice);
+
   // append note content to fileData.cards
   const text = payload.content.trim();
-  folderMap[targetFolder].fileData[choice].cards.push(text);
+  //folderMap[targetFolder].fileData[choice].cards.push(text);
   folderMap[targetFolder].fileData[choice].modified = true;
-  pendingFileChanges.add(`${targetFolder}/${choice}`);
+  console.log(folderMap[targetFolder].fileData[choice].cards);
+
+  pendingFileChanges.add(`${targetFolder}/${choice}.txt`);
   // mark left daily as filed
   // find left card element by id
-  const leftCard = document.querySelector(`.daily-card[data-note-id="${payload.id}"]`);
+  const leftCard = document.querySelector(`.daily-card[data-note-id="${payload.timestamp}"]`);
   if (leftCard) {
     leftCard.dataset.filed = 'y';
     leftCard.classList.add('filed');
+    leftCard.querySelector('button').textContent = '取消已歸檔';
     // update pendingFiledUpdates
-    pendingFiledUpdates[payload.id] = 'y';
+    const date = leftCard.parentElement.parentElement.firstChild.firstChild.textContent;
+    if (!pendingFiledUpdates.includes(date)){pendingFiledUpdates.push(date)};
+    dailyDataCache[date] = dailyDataCache[date].map(itemStr => {
+      const item = JSON.parse(itemStr);
+      if (item.timestamp === payload.timestamp){item.filed='y'};
+      return JSON.stringify(item);
+    });
   }
   // show animation on the target card (if present in grid)
   const targetGrid = [...foldersArea.querySelectorAll(".folder-grid")].find(g=>g.dataset.folder===targetFolder);
@@ -882,37 +957,38 @@ function makeFoldersReorderable(){
    Open modal to edit a specific file
    ========================= */
 const bsModal = new bootstrap.Modal(document.getElementById("editFileModal"));
-//const bsModal = document.getElementById("editFileModal");
 const modalFileTitle = document.getElementById("modalFileTitle");
 const modalList = document.getElementById("modalList");
 const modalAddCardBtn = document.getElementById("modalAddCardBtn");
 const modalConfirmBtn = document.getElementById("modalConfirmBtn");
 
 async function openFileModal(folderName, filename) {
-  const path = `${folderName}/${filename}`;
+  const path = `${folderName}/${filename}.txt`;
   modalState.path = path;
   // load file data if not loaded
   let fd = folderMap[folderName].fileData[filename];
   if (!fd) {
     // fetch from backend
-    const r = await api(`/api/topics/file?path=${encodeURIComponent(path)}`);
-    const title = r?.title || filename.replace(/\.txt$/,"");
-    const cards = r?.cards || [];
+    const r = await api("/note/read",{
+      method:"POST",
+      body:JSON.stringify({category:'note',path:path})
+    });
+    const title = filename;
+    const cards = r || [];
     fd = { title, cards: Array.from(cards), modified:false };
     folderMap[folderName].fileData[filename] = fd;
   }
   // populate modal
-  modalFileTitle.value = fd.title || filename.replace(/\.txt$/,"");
+  modalFileTitle.value = fd.title || filename;
   modalList.innerHTML = "";
-  fd.cards.forEach((c,i)=>{
-    const mc = createModalCard(c, i);
+  for (const [i, c] of fd.cards.entries()) {console.log(c);
+    const mc = await createModalCard(JSON.parse(c), i);
     modalList.appendChild(mc);
-  });
+  }
   bsModal.show();
-  //bsModal.style.display='block';
 }
 
-function createModalCard(text, idx) {
+async function createModalCard(s, idx) {
   const m = document.createElement("div");
   m.className = "modal-card";
   m.draggable = true;
@@ -922,7 +998,7 @@ function createModalCard(text, idx) {
   txt.contentEditable = true;
   txt.style.whiteSpace = "pre-wrap";
   txt.style.minHeight = "36px";
-  txt.textContent = text;
+  txt.innerHTML = await parseNoteFromServer(s);
 
   const actions = document.createElement("div");
   actions.style.display="flex";
@@ -941,7 +1017,7 @@ function createModalCard(text, idx) {
   copyBtn.className = "btn btn-sm btn-outline-secondary";
   copyBtn.textContent = "複製";
   copyBtn.addEventListener("click", ()=>{
-    clipboardCard = txt.innerText;
+    clipboardCard = txt.innerHTML;
     alert("已複製此卡片到剪貼區（可在其他主題按貼上）");
   });
 
@@ -981,18 +1057,17 @@ function createModalCard(text, idx) {
     // reindex data-index
     [...modalList.children].forEach((c,i)=> c.dataset.index = i);
   });
-
   return m;
 }
 
 /* modal add card */
-modalAddCardBtn.addEventListener("click", ()=>{
-  const newCard = createModalCard("", modalList.children.length);
+modalAddCardBtn.addEventListener("click", async ()=>{
+  const newCard = await createModalCard("", modalList.children.length);
   modalList.appendChild(newCard);
 });
 
 /* modal confirm: store changes into folderMap fileData (temporary) */
-modalConfirmBtn.addEventListener("click", ()=>{
+modalConfirmBtn.addEventListener("click", ()=>{console.log(pendingFileChanges);
   const path = modalState.path;
   if (!path) return;
   const [folder, ...rest] = path.split("/");
@@ -1000,7 +1075,7 @@ modalConfirmBtn.addEventListener("click", ()=>{
   const title = modalFileTitle.value.trim() || filename.replace(/\.txt$/,"");
   const cards = [...modalList.children].map(c => c.querySelector("div").innerText);
   folderMap[folder].fileData[filename] = { title, cards, modified:true };
-  pendingFileChanges.add(path);
+  pendingFileChanges.add(path);console.log(pendingFileChanges);//{'name.txt','name.txt'}
   // update visual: no direct change to topic-card label except title rename on blur
   bsModal.hide();
   //bsModal.style.display='none';
@@ -1017,8 +1092,8 @@ addFolderBtn.addEventListener("click", async ()=>{
   // create locally
   folderMap[name] = { files: [], fileData: {} };
   indexList.push(`${name}/`); // placeholder (will be cleaned up)
-  // also call backend to create folder if desired
-  await api("/api/topics/addFolder", { method:"POST", body: JSON.stringify({ folder: name }) });
+  // also call backend to create folder if desired >> wait for SAVE ALL
+  //await api("/api/topics/addFolder", { method:"POST", body: JSON.stringify({ folder: name }) });
   renderFolders();
 });
 
@@ -1035,26 +1110,39 @@ saveAllBtn.addEventListener("click", async ()=>{
     }
   }
   // call API to save index.json
-  await api("/api/topics/folders/order", { method:"POST", body: JSON.stringify({ index: newIndex }) });
+  //await api("/api/topics/folders/order", { method:"POST", body: JSON.stringify({ index: newIndex }) });
 
-  // b) 儲存所有被修改過(暫存)的主題小標內容
-  for (const path of Array.from(pendingFileChanges)) {
+  await api("/note/replace",{
+    method:"POST",
+    body:JSON.stringify({category:'note', path:'index.txt', content:newIndex.join('\n')})
+  });
+
+  // b) 儲存所有被修改過(暫存)的主題小標內容 >> 取代既有
+  for (const path of Array.from(pendingFileChanges)) {console.log(pendingFileChanges);console.log(path);
     const [folder, ...rest] = path.split("/");
-    const filename = rest.join("/");
-    const fd = folderMap[folder]?.fileData?.[filename];
+    const filename = rest.join("/").replace('.txt','');console.log(filename);console.log(folderMap[folder]);
+    const fd = folderMap[folder]?.fileData?.[filename];console.log(fd);
     if (!fd) continue;
-    await api("/api/topics/saveFile", {
+    await api("/note/replace", {
       method: "POST",
-      body: JSON.stringify({ path, title: fd.title || filename.replace(/\.txt$/,""), cards: fd.cards || [] })
+      body: JSON.stringify({ category:'note', path, content: fd.cards.join('\n') })
     });
     pendingFileChanges.delete(path);
   }
 
   // c) 儲存已標記的每日筆記 filed updates
-  const updates = Object.entries(pendingFiledUpdates).map(([id, filed])=> ({ id, filed }));
-  if (updates.length > 0) {
-    await api("/api/daily/updateFiled", { method:"POST", body: JSON.stringify({ updates }) });
-    pendingFiledUpdates = {}; // reset
+  //const updates = Object.entries(pendingFiledUpdates).map(([timestamp, filed])=> ({ timestamp, filed }));
+  if (pendingFiledUpdates.length > 0) {
+
+    for (const date of pendingFiledUpdates){
+      await api("/note/replace",{
+        method:"POST",
+        body:JSON.stringify({category:'daily', path:`${date}.txt`, content:dailyDataCache[date].join('\n')})
+      });
+    };
+
+    //await api("/api/daily/updateFiled", { method:"POST", body: JSON.stringify({ updates }) });
+    pendingFiledUpdates = []; // reset
   }
 
   alert("已發送儲存請求（folders index, 修改過的主題檔案, 與每日已標記列表）。若有錯誤請查看 console log。");
@@ -1069,6 +1157,33 @@ function cssEscapeSelector(s) {
   return s.replace(/([ #;?%&,.+*~\':"!\^$\[\]()=>|\/@])/g,'\\$1');
 }
 
+function cvt2Timezone(timestamp) {const date = new Date(timestamp);return date.toLocaleString('zh-TW',{timeZone:'Asia/Taipei'});}
+
+async function parseNoteFromServer(h){
+  let html='';console.log(h);
+  if (h===''){html=''} else {
+    if (h.src){
+      html+=`<p>${h.content.replaceAll('\n\n','</p><p>').replaceAll('\n','</p><p>')}</p><a href="${h.src}" target="_blank">原文連結</a><span class="time fw-normal">  ${cvt2Timezone(h.timestamp)}</span>`
+    } else if (h.content.startsWith('http')){
+      html+=`<p><a href="${h.content.slice(0,h.content.indexOf('?'))}" target="_blank">原文連結</a></p><span class="time fw-normal">  ${cvt2Timezone(h.timestamp)}</span>`;
+    } else if (h.content.endsWith('heic">')){
+      try {
+        const response = await fetch(h.content.match(/https[\s\S]*?heic/g)[0]);
+        const blob = await response.blob();
+        // 前端轉換 heic → jpg
+        const convertedBlob = await heic2any({ blob, toType: "image/jpeg" });
+        html+=`<p><img src="${URL.createObjectURL(convertedBlob)}"></p><span class="time fw-normal">${cvt2Timezone(h.timestamp)}</span>`;
+      } catch (err) {
+        console.error("HEIC 轉換失敗:", err);
+      }
+    } else {
+    html+=`<p>${h.content.replaceAll('\n\n','</p><p>').replaceAll('\n','</p><p>')}</p><span class="time fw-normal">${cvt2Timezone(h.timestamp)}</span>`;
+    }
+  }
+  return html;
+}
+
+
 /* initial load */
 refreshDailyBtn.addEventListener("click", loadDailyList);
 loadDailyList();
@@ -1076,7 +1191,6 @@ loadIndexAndFolders();
 
 </script>
 
-<!-- bootstrap js -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
 </body>
 </html>
