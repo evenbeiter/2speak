@@ -881,8 +881,8 @@ function makeFoldersReorderable(){
 /* =========================
    Open modal to edit a specific file
    ========================= */
-//const bsModal = new bootstrap.Modal(document.getElementById("editFileModal"));
-const bsModal = document.getElementById("editFileModal");
+const bsModal = new bootstrap.Modal(document.getElementById("editFileModal"));
+//const bsModal = document.getElementById("editFileModal");
 const modalFileTitle = document.getElementById("modalFileTitle");
 const modalList = document.getElementById("modalList");
 const modalAddCardBtn = document.getElementById("modalAddCardBtn");
@@ -908,8 +908,8 @@ async function openFileModal(folderName, filename) {
     const mc = createModalCard(c, i);
     modalList.appendChild(mc);
   });
-  //bsModal.show();
-  bsModal.style.display='block';
+  bsModal.show();
+  //bsModal.style.display='block';
 }
 
 function createModalCard(text, idx) {
@@ -1002,8 +1002,8 @@ modalConfirmBtn.addEventListener("click", ()=>{
   folderMap[folder].fileData[filename] = { title, cards, modified:true };
   pendingFileChanges.add(path);
   // update visual: no direct change to topic-card label except title rename on blur
-  //bsModal.hide();
-  bsModal.style.display='none';
+  bsModal.hide();
+  //bsModal.style.display='none';
   alert("已在前端暫存編輯（尚未寫入 repo），請按右上「儲存」同步到 GitHub。");
 });
 
